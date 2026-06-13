@@ -7,12 +7,15 @@ import React, { useState, useEffect } from "react";
 import { 
   Heart, MessageSquare, Share2, Bookmark, Send, Sparkles, 
   Image, Video, Link2, MoreHorizontal, MessageCircle, AlertCircle,
-  Trophy, BadgeAlert, Laptop, Briefcase, PlusCircle, CheckCircle, Flame
+  Trophy, BadgeAlert, Laptop, Briefcase, PlusCircle, CheckCircle, Flame,
+  UserPlus, UserMinus, UserCheck, Star
 } from "lucide-react";
 import LoadingSkeleton from "./LoadingSkeleton";
+import { FollowService } from "../services/followService";
 
 export interface FeedPost {
   id: string;
+  authorId?: string;
   type: "project" | "recruitment" | "internship" | "hackathon" | "achievement" | "general";
   authorName: string;
   authorRole: string;
@@ -49,12 +52,27 @@ export default function HomeFeed() {
   const [expandedCommentsPostId, setExpandedCommentsPostId] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<{ [postId: string]: string }>({});
 
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadFollowing = async () => {
+      try {
+        const backendFollows = await FollowService.getFollowing();
+        setFollowingIds(backendFollows.map(f => f.followingId));
+      } catch (e) {
+        console.error("Error setting follow states in HomeFeed:", e);
+      }
+    };
+    loadFollowing();
+  }, []);
+
   // Seed default feed posts
   useEffect(() => {
     setLoading(true);
     const defaultPosts: FeedPost[] = [
       {
         id: "post_1",
+        authorId: "student_ashish",
         type: "recruitment",
         authorName: "Ashish Ghadigaonkar",
         authorRole: "Fullstack Lead Developer",
@@ -78,6 +96,7 @@ export default function HomeFeed() {
       },
       {
         id: "post_2",
+        authorId: "org_gdsc",
         type: "hackathon",
         authorName: "Google GDSC Tech Team",
         authorRole: "Official Campus Organizer",
@@ -99,6 +118,7 @@ export default function HomeFeed() {
       },
       {
         id: "post_3",
+        authorId: "student_sneha",
         type: "achievement",
         authorName: "Sneha Kapadia",
         authorRole: "Lead Product Designer",
@@ -114,6 +134,7 @@ export default function HomeFeed() {
       },
       {
         id: "post_4",
+        authorId: "mentor_nitin",
         type: "internship",
         authorName: "Nitin Kamath",
         authorRole: "VP of Engineering at CloudSecure",
@@ -251,9 +272,44 @@ export default function HomeFeed() {
     setShowCreateComposer(false);
   };
 
+  const handleToggleFeedFollow = async (authorId: string, authorName: string) => {
+    if (!authorId || authorId === "student_ashish") return;
+
+    let type: "student" | "mentor" | "company" = "student";
+    if (authorId === "org_gdsc" || authorId.startsWith("comp_")) {
+      type = "company";
+    } else if (authorId === "mentor_nitin" || authorId.startsWith("mentor_")) {
+      type = "mentor";
+    }
+
+    try {
+      const isNowFollowing = await FollowService.toggleFollow(authorId, type);
+      if (isNowFollowing !== null) {
+        if (isNowFollowing) {
+          setFollowingIds(prev => [...prev, authorId]);
+        } else {
+          setFollowingIds(prev => prev.filter(id => id !== authorId));
+        }
+      }
+    } catch (e) {
+      console.error("Error toggling follow from feed UI:", e);
+    }
+  };
+
   const filteredPosts = posts.filter(p => {
     if (activeFilter === "all") return true;
     return p.type === activeFilter;
+  });
+
+  const sortedAndPrioritizedPosts = [...filteredPosts].sort((a, b) => {
+    const aId = a.authorId || "";
+    const bId = b.authorId || "";
+    const aFollowed = aId ? followingIds.includes(aId) : false;
+    const bFollowed = bId ? followingIds.includes(bId) : false;
+
+    if (aFollowed && !bFollowed) return -1;
+    if (!aFollowed && bFollowed) return 1;
+    return 0;
   });
 
   return (
@@ -385,12 +441,16 @@ export default function HomeFeed() {
         <LoadingSkeleton type="feed" count={3} />
       ) : (
         <div className="space-y-4">
-          {filteredPosts.map(post => {
+          {sortedAndPrioritizedPosts.map(post => {
             const isCommentsExpanded = expandedCommentsPostId === post.id;
             return (
               <div
                 key={post.id}
-                className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5 text-xs text-slate-100 flex flex-col justify-between gap-3 shadow-md hover:border-slate-800/80 transition-all"
+                className={`bg-slate-900 border rounded-2xl p-4 md:p-5 text-xs text-slate-100 flex flex-col justify-between gap-3 shadow-md hover:border-slate-800/80 transition-all ${
+                  post.authorId && followingIds.includes(post.authorId)
+                    ? "border-indigo-500/40 bg-gradient-to-br from-indigo-950/10 via-slate-900 to-slate-900 shadow-indigo-950/10"
+                    : "border-slate-850"
+                }`}
               >
                 {/* TOP HEADER */}
                 <div className="flex justify-between items-start">
@@ -402,7 +462,7 @@ export default function HomeFeed() {
                       referrerPolicy="no-referrer"
                     />
                     <div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-bold text-white text-xs hover:underline cursor-pointer">{post.authorName}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase ${
                           post.type === "recruitment"
@@ -417,15 +477,45 @@ export default function HomeFeed() {
                         }`}>
                           {post.type}
                         </span>
+                        {post.authorId && post.authorId !== "student_ashish" && (
+                          <button
+                            onClick={() => handleToggleFeedFollow(post.authorId!, post.authorName)}
+                            className={`px-2 py-0.5 rounded-full font-bold font-sans text-[9px] transition-all cursor-pointer flex items-center gap-0.5 border ${
+                              followingIds.includes(post.authorId)
+                                ? "bg-slate-950 text-indigo-300 border-indigo-500/20 hover:bg-red-950/20 hover:text-red-400 hover:border-red-500/20"
+                                : "bg-indigo-600 text-white border-transparent hover:bg-indigo-500"
+                            }`}
+                          >
+                            {followingIds.includes(post.authorId) ? (
+                              <>
+                                <UserCheck className="w-2.5 h-2.5" />
+                                <span>Following</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="w-2.5 h-2.5" />
+                                <span>Follow</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                       <span className="text-[10px] text-slate-450 block leading-tight">{post.authorRole}</span>
                       <span className="text-[9px] text-slate-500 font-mono block mt-0.5">{post.timestamp}</span>
                     </div>
                   </div>
 
-                  <button className="text-slate-500 hover:text-white cursor-pointer p-1">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {post.authorId && followingIds.includes(post.authorId) && (
+                      <span className="flex items-center gap-0.5 text-indigo-400 bg-indigo-950/50 border border-indigo-500/20 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase select-none">
+                        <Star className="w-2.5 h-2.5 fill-indigo-400 text-indigo-400" />
+                        <span>Prioritized</span>
+                      </span>
+                    )}
+                    <button className="text-slate-500 hover:text-white cursor-pointer p-1">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* POST BODY */}

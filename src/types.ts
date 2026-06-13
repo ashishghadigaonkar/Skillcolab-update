@@ -237,3 +237,173 @@ export interface SystemAnalytics {
   internshipApplications: number;
   skillsFrequency: { name: string; count: number }[];
 }
+
+// ==========================================
+// PROFESSIONAL LINKEDIN SUITE EXTENSIONS
+// ==========================================
+
+export interface ProfessionalConnection {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderHeadline: string;
+  receiverId: string;
+  receiverName: string;
+  receiverAvatar: string;
+  receiverHeadline: string;
+  status: "Pending" | "Accepted" | "Rejected";
+  createdAt: string;
+}
+
+export interface UserFollow {
+  userId: string;
+  targetId: string; // can be User id, Company id, Mentor id, or Org id
+  targetType: "User" | "Company" | "Mentor" | "Org";
+  createdAt: string;
+}
+
+export interface CompanyPage {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  logo: string;
+  banner: string;
+  industry: string;
+  size: string; // e.g., "11-50 employees"
+  foundedYear: number;
+  website: string;
+  location: string;
+  socialLinks: { twitter?: string; linkedin?: string; github?: string };
+  followersCount: number;
+  employeesCount: number;
+  openJobs: string[]; // Job ids
+}
+
+export interface OrganizationPage {
+  id: string;
+  name: string;
+  type: "GDSC Chapter" | "Technical Community" | "Startup Community" | "Student Club";
+  tagline: string;
+  description: string;
+  logo: string;
+  membersCount: number;
+  eventsCount: number;
+}
+
+export interface SkillEndorsement {
+  id: string;
+  skillName: string;
+  endorsedUserId: string;
+  endorserId: string;
+  endorserName: string;
+  endorserRole: string;
+  createdAt: string;
+}
+
+export interface LinkedInRecommendation {
+  id: string;
+  receiverId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderRole: string; // e.g., "Project Manager", "Mentor"
+  text: string;
+  status: "Pending" | "Approved";
+  createdAt: string;
+}
+
+export interface ContentArticle {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  title: string;
+  summary: string;
+  content: string; // Markdown article content
+  coverImage?: string;
+  views: number;
+  likes: number;
+  shares: number;
+  status: "Draft" | "Published";
+  createdAt: string;
+}
+
+export interface Newsletter {
+  id: string;
+  title: string;
+  frequency: "Weekly" | "Monthly";
+  description: string;
+  subscribersCount: number;
+  authorId: string;
+  authorName: string;
+  archive: { title: string; sendDate: string; content: string }[];
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  organizerName: string;
+  type: "Online Webinar" | "Tech Talk" | "Matchmaking Meetup" | "Offline Hackathon Info";
+  date: string;
+  time: string;
+  linkOrLocation: string;
+  attendeesCount: number;
+  isRegistered?: boolean;
+}
+
+export interface ExtendedJobItem {
+  id: string;
+  title: string;
+  companyName: string;
+  type: "Full-Time" | "Part-Time" | "Remote" | "Campus Internship";
+  stipendOrSalary: string;
+  skills: string[];
+  description: string;
+  applyBy: string;
+  applicantsCount: number;
+}
+
+export interface AlumniRecord {
+  id: string;
+  name: string;
+  avatar: string;
+  gradYear: number;
+  department: string;
+  currentCompany: string;
+  currentRole: string;
+  skills: string[];
+}
+
+export interface ProfileViewLog {
+  id: string;
+  profileOwnerId: string;
+  viewerId: string;
+  viewerName: string;
+  viewerAvatar: string;
+  viewerHeadline: string;
+  viewedAt: string;
+}
+
+export interface RecruiterCandidatePipeline {
+  candidateId: string;
+  candidateName: string;
+  candidateAvatar: string;
+  tag: string; // e.g. "Sourcing" | "Interviewing" | "Shortlisted" | "Offered"
+  notes: string[];
+}
+
+export interface StreakTracker {
+  streak: number;
+  lastActive: string;
+}
+
+export interface FollowerRelation {
+  id: string;
+  followerId: string;
+  followingId: string;
+  followingType: "student" | "mentor" | "company";
+  createdAt?: string;
+}
+

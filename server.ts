@@ -14,12 +14,13 @@ import {
   MongoDBService, UserModel, ProjectModel, TeamModel, ApplicationModel, 
   HackathonModel, InternshipModel, MentorModel, MentorBookingModel, 
   ChatModel, MessageModel, NotificationModel, StartupIdeaModel, 
-  VerificationRequestModel, SubscriptionModel, PaymentModel, InvoiceModel, AuditLogModel 
+  VerificationRequestModel, SubscriptionModel, PaymentModel, InvoiceModel, AuditLogModel,
+  FollowerModel
 } from "./src/services/mongodbService";
 import { 
   User, UserRole, Project, Team, TeamApplication, 
   Hackathon, InternshipPost, Mentor, MentorshipSession, 
-  ChatThread, Notification, SystemAnalytics 
+  ChatThread, Notification, SystemAnalytics, FollowerRelation
 } from "./src/types";
 
 // Initialize Gemini client lazy-loaded
@@ -500,7 +501,12 @@ let dbState = {
   chats: DEFAULT_CHATS,
   notifications: DEFAULT_NOTIFICATIONS,
   analytics: DEFAULT_ANALYTICS,
-  channelMessages: DEFAULT_CHANNEL_MESSAGES as Record<string, any[]>
+  channelMessages: DEFAULT_CHANNEL_MESSAGES as Record<string, any[]>,
+  followers: [
+    { id: "follow_1", followerId: "student_ashish", followingId: "comp_microsoft", followingType: "company" },
+    { id: "follow_2", followerId: "student_ashish", followingId: "mentor_nitin", followingType: "mentor" },
+    { id: "follow_3", followerId: "student_ashish", followingId: "mentor_ayesha", followingType: "mentor" }
+  ] as FollowerRelation[]
 };
 
 // Load database state from disk if exists
@@ -511,6 +517,14 @@ function loadDb() {
       dbState = JSON.parse(dataStr);
       if (!dbState.channelMessages) {
         dbState.channelMessages = JSON.parse(JSON.stringify(DEFAULT_CHANNEL_MESSAGES));
+        saveDb();
+      }
+      if (!dbState.followers) {
+        dbState.followers = [
+          { id: "follow_1", followerId: "student_ashish", followingId: "comp_microsoft", followingType: "company" },
+          { id: "follow_2", followerId: "student_ashish", followingId: "mentor_nitin", followingType: "mentor" },
+          { id: "follow_3", followerId: "student_ashish", followingId: "mentor_ayesha", followingType: "mentor" }
+        ];
         saveDb();
       }
       console.log("Mock database successfully loaded from:", DB_FILE_PATH);
@@ -1714,6 +1728,83 @@ app.post("/api/internships/:id/apply", async (req, res) => {
 });
 
 
+// ==========================================
+// 7b. FOLLOW SYSTEM APIS
+// ==========================================
+app.get("/api/follows", async (req, res) => {
+  const userId = dbState.user.id || "student_ashish";
+
+  if (mongoose.connection.readyState !== 1) {
+    const list = dbState.followers.filter(f => f.followerId === userId);
+    return res.json(list);
+  }
+
+  try {
+    const list = await FollowerModel.find({ followerId: userId });
+    const mapped = list.map(f => ({
+      id: f._id.toString(),
+      followerId: f.followerId,
+      followingId: f.followingId,
+      followingType: f.followingType
+    }));
+    return res.json(mapped);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/follows", async (req, res) => {
+  const userId = dbState.user.id || "student_ashish";
+  const { followingId, followingType } = req.body;
+
+  if (!followingId || !followingType) {
+    return res.status(400).json({ error: "Missing followingId or followingType" });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    const existingIndex = dbState.followers.findIndex(
+      f => f.followerId === userId && f.followingId === followingId
+    );
+
+    if (existingIndex > -1) {
+      // Unfollow
+      dbState.followers.splice(existingIndex, 1);
+      saveDb();
+      return res.json({ followed: false, followingId });
+    } else {
+      // Follow
+      const newFollow: FollowerRelation = {
+        id: `follow_${Date.now()}`,
+        followerId: userId,
+        followingId,
+        followingType
+      };
+      dbState.followers.push(newFollow);
+      saveDb();
+      return res.json({ followed: true, followingId });
+    }
+  }
+
+  try {
+    const existing = await FollowerModel.findOne({ followerId: userId, followingId });
+    if (existing) {
+      await FollowerModel.deleteOne({ _id: existing._id });
+      return res.json({ followed: false, followingId });
+    } else {
+      const newFollow = new FollowerModel({
+        followerId: userId,
+        followingId,
+        followingType
+      });
+      await newFollow.save();
+      return res.json({ followed: true, followingId, id: newFollow._id.toString() });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 // 8. Mentors Directory APIs
 app.get("/api/mentors", async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
@@ -2891,6 +2982,35 @@ app.get("/api/notifications", async (req, res) => {
   }
 });
 
+// 7. AI LinkedIn Post Compiler Proxy Route
+app.post("/api/professional/ai-post", async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: "Missing prompt" });
+
+  const ai = getGeminiClient();
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `You are a professional technical Career Coach and personal branding strategist.
+Modify and compile the following collegiate achievement into a high-impact, highly engaging, professional LinkedIn-style post. Add relevant structured takeaways, bullet points, and clean hashtags. Make it inspire peers and catch the attention of tech recruiters.
+Achievement details: "${prompt}"
+
+Respond with ONLY the final post body. Avoid markdown intro headers or chatter.`,
+        config: {
+          temperature: 0.7
+        }
+      });
+      return res.json({ text: response.text || "" });
+    } catch (e: any) {
+      console.warn("Gemini LinkedIn compiler currently offline or limited:", e?.message || e);
+    }
+  }
+
+  // Fallback
+  return res.json({ text: "" });
+});
+
 app.post("/api/notifications/:id/read", async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
     const { id } = req.params;
@@ -3016,7 +3136,8 @@ app.post("/api/admin/reset", (req, res) => {
     chats: JSON.parse(JSON.stringify(DEFAULT_CHATS)),
     notifications: JSON.parse(JSON.stringify(DEFAULT_NOTIFICATIONS)),
     analytics: JSON.parse(JSON.stringify(DEFAULT_ANALYTICS)),
-    channelMessages: JSON.parse(JSON.stringify(DEFAULT_CHANNEL_MESSAGES))
+    channelMessages: JSON.parse(JSON.stringify(DEFAULT_CHANNEL_MESSAGES)),
+    followers: []
   };
   saveDb();
   res.json({ success: true });

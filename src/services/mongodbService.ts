@@ -656,6 +656,24 @@ const AuditLogSchema = new Schema<IAuditLogDocument>({
 export const AuditLogModel: Model<IAuditLogDocument> =
   mongoose.models.AuditLog || mongoose.model<IAuditLogDocument>("AuditLog", AuditLogSchema);
 
+// 20. Followers
+export interface IFollowerDocument extends Document {
+  followerId: string;
+  followingId: string;
+  followingType: "student" | "mentor" | "company";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const FollowerSchema = new Schema<IFollowerDocument>({
+  followerId: { type: String, required: true, index: true },
+  followingId: { type: String, required: true, index: true },
+  followingType: { type: String, enum: ["student", "mentor", "company"], required: true }
+}, { timestamps: true });
+
+export const FollowerModel: Model<IFollowerDocument> =
+  mongoose.models.Follower || mongoose.model<IFollowerDocument>("Follower", FollowerSchema);
+
 // ==========================================
 // MONGODB PRODUCTION CONNECTION MANAGEMENT
 // ==========================================
@@ -717,6 +735,7 @@ export class MongoDBService {
       console.info("[MongoDBService] Constructing sparse / compound collection indices...");
       await UserModel.ensureIndexes();
       await ProjectModel.ensureIndexes();
+      await FollowerModel.ensureIndexes();
       console.info("[MongoDBService] Database indexing strategy created.");
     } catch (e) {
       console.warn("[MongoDBService] Failed indexing synchronization:", e);

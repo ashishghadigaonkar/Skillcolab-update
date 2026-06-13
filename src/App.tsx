@@ -26,6 +26,7 @@ import StartupLaunchpad from "./components/StartupLaunchpad";
 import OpenSourceHub from "./components/OpenSourceHub";
 import HomeFeed from "./components/HomeFeed";
 import MyUserProfile from "./components/MyUserProfile";
+import ProfessionalNetworkSuite from "./components/ProfessionalNetworkSuite";
 import { Project } from "./types";
 import { FirebaseAuthService } from "./services/firebase";
 
@@ -409,6 +410,18 @@ export default function App() {
                   <Sparkles className="w-4 h-4 text-amber-300" /> AI Career Suite
                 </button>
 
+                {/* Professional LinkedIn Suite */}
+                <button
+                  onClick={() => navigateToTab("professional_suite")}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition-all cursor-pointer ${
+                    activeTab === "professional_suite"
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                      : "text-slate-400 hover:text-white hover:bg-slate-855"
+                  }`}
+                >
+                  <Award className="w-4 h-4 text-emerald-400" /> Career & Network Hub
+                </button>
+
                 {/* Startups Hub generator */}
                 <button
                   onClick={() => navigateToTab("startup_launchpad")}
@@ -682,6 +695,13 @@ export default function App() {
           {activeTab === "ai_matcher" && <RecommendationEngine />}
           {activeTab === "admin" && <AdminConsole />}
           {activeTab === "blueprint" && <DeveloperBlueprint />}
+          
+          {activeTab === "professional_suite" && (
+            <ProfessionalNetworkSuite 
+              currentUser={currentUser} 
+              onUpdateCurrentUser={(updated) => setCurrentUser(updated)} 
+            />
+          )}
           
           {/* Main customized LinkedIn Profile screen */}
           {activeTab === "profile" && <MyUserProfile />}
