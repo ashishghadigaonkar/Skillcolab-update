@@ -9,8 +9,8 @@ import {
   BookOpen, Plus, Trash2, CheckCircle, Flame, Star, 
   ShieldCheck, GitCommit, GitBranch, Terminal, Copy, AlertCircle, Sparkles
 } from "lucide-react";
-import { User } from "../types";
-import { FirebaseAuthService } from "../services/firebase";
+import { User } from "../../../types";
+import { FirebaseAuthService } from "../../../services/firebase";
 
 export default function MyUserProfile() {
   const [user, setUser] = useState<User | null>(null);

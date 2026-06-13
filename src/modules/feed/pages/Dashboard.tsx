@@ -8,7 +8,7 @@ import {
   Award, Edit3, MapPin, Link2, Mail, Briefcase, 
   BookOpen, Plus, Trash2, CheckCircle2, Bell, BellOff, ArrowRight, UserCheck 
 } from "lucide-react";
-import { User } from "../types";
+import { User } from "../../../types";
 
 interface DashboardProps {
   onProfileUpdated?: () => void;

@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Team, TeamApplication, Project 
-} from "../types";
+} from "../../../types";
 import { 
   Users, CheckCircle2, ShieldAlert, Plus, Calendar, CheckSquare, Clock, ArrowRight, UserCheck 
 } from "lucide-react";

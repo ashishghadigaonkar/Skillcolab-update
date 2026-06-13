@@ -10,8 +10,8 @@ import {
   Trophy, BadgeAlert, Laptop, Briefcase, PlusCircle, CheckCircle, Flame,
   UserPlus, UserMinus, UserCheck, Star
 } from "lucide-react";
-import LoadingSkeleton from "./LoadingSkeleton";
-import { FollowService } from "../services/followService";
+import LoadingSkeleton from "../../../shared/components/LoadingSkeleton";
+import { FollowService } from "../../../services/followService";
 
 export interface FeedPost {
   id: string;

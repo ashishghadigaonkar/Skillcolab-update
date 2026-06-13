@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { InternshipPost } from "../types";
+import { InternshipPost } from "../../../types";
 import { 
   Briefcase, Search, MapPin, Sparkles, Send, 
   Layers, Plus, Trash2, CheckCircle2, ShieldAlert, ListFilter 

@@ -11,13 +11,13 @@ import {
   Bookmark, Plus, X, ArrowUpRight, Send, Filter, Settings, ShieldCheck, Check, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { FollowService } from "../services/followService";
+import { FollowService } from "../../../services/followService";
 import { 
   UserRole, ProfessionalConnection, CompanyPage, OrganizationPage, 
   SkillEndorsement, LinkedInRecommendation, ContentArticle, Newsletter, 
   EventItem, ExtendedJobItem, AlumniRecord, ProfileViewLog, RecruiterCandidatePipeline, 
   StreakTracker 
-} from "../types";
+} from "../../../types";
 
 interface ProfessionalNetworkSuiteProps {
   currentUser: any;

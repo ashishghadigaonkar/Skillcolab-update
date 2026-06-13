@@ -6,12 +6,12 @@
 import React, { useState, useEffect } from "react";
 import { 
   Project, TeamApplication 
-} from "../types";
+} from "../../../types";
 import { 
   FolderPlus, Search, Code, Users, Award, ShieldAlert, 
   Send, Layers, ExternalLink, SlidersHorizontal, CheckSquare 
 } from "lucide-react";
-import LoadingSkeleton from "./LoadingSkeleton";
+import LoadingSkeleton from "../../../shared/components/LoadingSkeleton";
 
 interface ProjectMarketplaceProps {
   onProjectCreated: () => void;

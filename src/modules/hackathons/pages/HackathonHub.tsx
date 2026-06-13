@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Hackathon } from "../types";
+import { Hackathon } from "../../../types";
 import { 
   Award, Trophy, Calendar, CheckCircle2, Terminal, Code, Plus, ExternalLink, ShieldAlert 
 } from "lucide-react";

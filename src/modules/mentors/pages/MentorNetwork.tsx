@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Mentor, MentorshipSession } from "../types";
+import { Mentor, MentorshipSession } from "../../../types";
 import { 
   User, Star, Calendar, MessageSquare, Plus, Clock, ExternalLink, ShieldAlert, CreditCard 
 } from "lucide-react";
