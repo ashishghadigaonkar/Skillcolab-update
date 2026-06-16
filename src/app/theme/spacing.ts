@@ -1,14 +1,18 @@
-/**
- * Spacing and layout alignment tokens.
- */
+// Centralised Design System Spacing Tokens
 export const spacing = {
-  container: "px-4 md:px-6 py-6",
-  gapSm: "gap-2",
-  gapMd: "gap-4",
-  gapLg: "gap-6",
-  paddingSm: "p-2",
-  paddingMd: "p-4 md:p-5",
-  paddingLg: "p-6",
-  railWidth: "w-64",
-  sidecarWidth: "w-76"
+  gutter: {
+    mobile: "p-4",
+    desktop: "p-6",
+  },
+  margin: {
+    xs: "my-1",
+    sm: "my-2",
+    md: "my-4",
+    lg: "my-6",
+  },
+  gap: {
+    grid: "gap-5",
+    flow: "gap-4",
+    dense: "gap-2.5",
+  }
 };

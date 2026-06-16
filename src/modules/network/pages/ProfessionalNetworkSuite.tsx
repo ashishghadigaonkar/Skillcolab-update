@@ -19,6 +19,13 @@ import {
   StreakTracker 
 } from "../../../types";
 
+// Phase 4 Modular Component Imports
+import { ConnectionsPanel } from "../components/ConnectionsPanel";
+import { FollowersPanel } from "../components/FollowersPanel";
+import { FollowingPanel } from "../components/FollowingPanel";
+import { RecommendationsPanel } from "../components/RecommendationsPanel";
+import { NetworkAnalytics } from "../components/NetworkAnalytics";
+
 interface ProfessionalNetworkSuiteProps {
   currentUser: any;
   onUpdateCurrentUser: (updated: any) => void;
@@ -621,6 +628,16 @@ export default function ProfessionalNetworkSuite({ currentUser, onUpdateCurrentU
           My Network Graph
         </button>
         <button
+          onClick={() => setActiveSubTab("recommendations")}
+          className={`px-4 py-2 rounded-t-xl transition-all border-t border-x ${
+            activeSubTab === "recommendations"
+              ? "bg-slate-900 border-slate-850 text-indigo-400 font-bold"
+              : "border-transparent text-slate-400 hover:text-white"
+          }`}
+        >
+          Recommendations
+        </button>
+        <button
           onClick={() => setActiveSubTab("articles")}
           className={`px-4 py-2 rounded-t-xl transition-all border-t border-x ${
             activeSubTab === "articles"
@@ -693,275 +710,57 @@ export default function ProfessionalNetworkSuite({ currentUser, onUpdateCurrentU
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              className="space-y-6"
             >
-              {/* Left Column: Network Statistics & Suggested Connections */}
-              <div className="space-y-6">
-                
-                {/* Visualizing 1st / 2nd / 3rd Demarcations */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5 relative">
-                  <h3 className="font-sans font-bold text-white text-xs mb-3 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-indigo-400" /> Network Degree Distribution
-                  </h3>
-                  
-                  <div className="space-y-3.5 text-xs text-slate-300 font-mono">
-                    <div className="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-850">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">1st Degree Connections</span>
-                      <span className="text-white font-bold text-xs">{connections.filter(c => c.status === "Accepted").length + 2}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-850">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">2nd Degree (Through Peers)</span>
-                      <span className="text-indigo-400 font-bold text-xs">24 Mutuals</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-850">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">3rd Degree+ (Collegiate Hub)</span>
-                      <span className="text-slate-500 text-xs">140+ leads</span>
-                    </div>
-                  </div>
+              <NetworkAnalytics 
+                connectionsCount={connections.filter(c => c.status === "Accepted").length}
+                profileViews={profileViews}
+                referrals={referrals}
+                reputationPoints={currentUser?.reputationPoints || 100}
+              />
 
-                  <div className="mt-4 pt-3 border-t border-slate-850 flex justify-between items-center text-[10.5px] text-indigo-400 font-mono">
-                    <span>Network growth index: <strong className="text-emerald-400">+12% this week</strong></span>
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <ConnectionsPanel 
+                    connections={connections}
+                    onAcceptConnection={handleAcceptConnection}
+                    onRejectConnection={handleRejectConnection}
+                    onSendConnection={handleSendConnection}
+                    peopleYouMayKnow={peopleYouMayKnow}
+                  />
                 </div>
-
-                {/* People You May Know */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5">
-                  <h4 className="font-sans font-bold text-white text-xs mb-3 flex items-center gap-1.5">
-                    <UserPlus className="w-4 h-4 text-emerald-400" /> People You May Know
-                  </h4>
-                  <div className="space-y-3">
-                    {peopleYouMayKnow.map(pymk => (
-                      <div key={pymk.id} className="flex gap-3 items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-850">
-                        <img src={pymk.avatar} alt={pymk.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                        <div className="flex-1 min-w-0 pr-1">
-                          <h5 className="text-[11px] font-bold text-white truncate">{pymk.name}</h5>
-                          <span className="text-[9px] text-slate-450 block truncate leading-tight">{pymk.role}</span>
-                          <span className="text-[8px] text-indigo-400 block mt-0.5 font-mono">{pymk.mutual} mutual connections</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            handleSendConnection(pymk);
-                            alert(`Connection proposal sent to ${pymk.name}`);
-                          }}
-                          className="p-1 px-2.5 bg-indigo-600 hover:bg-indigo-500 rounded text-[9px] font-mono font-bold text-white transition-colors cursor-pointer"
-                        >
-                          Connect
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                <div className="space-y-6">
+                  <FollowersPanel followers={followers} />
+                  <FollowingPanel 
+                    following={following}
+                    onToggleFollow={handleToggleFollow}
+                    companies={companies}
+                    organizations={organizations}
+                  />
                 </div>
-
-                {/* ALUMNI COMPONENT MAP (Module 15) */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-sans font-bold text-white text-xs flex items-center gap-1.5">
-                      <Landmark className="w-4 h-4 text-amber-400" /> College Alumni Directory
-                    </h4>
-                  </div>
-                  <div className="space-y-3">
-                    {alumni.map(alum => (
-                      <div key={alum.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-850 space-y-1.5 text-xs text-slate-300">
-                        <div className="flex justify-between items-start">
-                          <div className="flex gap-2">
-                            <img src={alum.avatar} alt={alum.name} className="w-8 h-8 rounded-full object-cover border border-slate-800" />
-                            <div>
-                              <h5 className="font-bold text-white text-[11px] leading-tight">{alum.name}</h5>
-                              <span className="text-[9px] text-indigo-400 block font-mono">{alum.department} • Batch of {alum.gradYear}</span>
-                            </div>
-                          </div>
-                          <span className="px-1.5 py-0.5 bg-slate-900 rounded font-mono text-[8px] text-slate-450 border border-slate-800 uppercase">Verified Alum</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-sans italic my-1">"{alum.currentRole} @ {alum.currentCompany}"</p>
-                        <div className="flex flex-wrap gap-1 leading-none mt-1">
-                          {alum.skills.map((as, idx) => (
-                            <span key={idx} className="px-1.5 py-0.5 bg-slate-900 text-indigo-300 rounded font-mono text-[8px] border border-slate-800">
-                              {as}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
               </div>
+            </motion.div>
+          )}
 
-              {/* Middle & Right Column: Connection requests dashboard & recommendations */}
-              <div className="lg:col-span-2 space-y-6">
-                
-                {/* Connection Requests List */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5">
-                  <h3 className="font-sans font-bold text-white text-xs mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-indigo-400" /> Pending Peer Connection Requests
-                  </h3>
-                  
-                  {connections.filter(c => c.status === "Pending").length === 0 ? (
-                    <div className="text-center py-6 bg-slate-950 border border-slate-850 rounded-xl">
-                      <p className="text-slate-500 font-mono text-xs">No pending peer connection requests.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {connections.filter(c => c.status === "Pending").map(conn => (
-                        <div key={conn.id} className="flex flex-col sm:flex-row gap-3 justify-between sm:items-center p-3 bg-slate-950 rounded-xl border border-slate-850">
-                          <div className="flex gap-3 items-center">
-                            <img src={conn.senderAvatar} alt={conn.senderName} className="w-10 h-10 rounded-full object-cover" />
-                            <div>
-                              <h5 className="font-bold text-white text-xs">{conn.senderName}</h5>
-                              <span className="text-[9.5px] text-slate-400 block font-mono">{conn.senderHeadline}</span>
-                              <span className="text-[8px] text-slate-500 block">Requested on {conn.createdAt}</span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => handleAcceptConnection(conn.id)}
-                              className="p-1 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-mono font-bold text-[10px] transition-colors cursor-pointer"
-                            >
-                              Accept Connect
-                            </button>
-                            <button
-                              onClick={() => handleRejectConnection(conn.id)}
-                              className="p-1 px-3 bg-slate-900 hover:bg-slate-850 text-slate-300 rounded font-mono text-[10px] border border-slate-800 transition-colors cursor-pointer"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* SOCIAL PROOF: WHO VIEWED YOUR PROFILE (Module 16) */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5">
-                  <h3 className="font-sans font-bold text-white text-xs mb-3 flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-amber-400" /> Personal Branding & Profile Views
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div className="p-3 bg-slate-950 border border-slate-850 rounded-xl relative overflow-hidden">
-                      <span className="text-[9px] text-slate-500 font-mono uppercase">Views Last 7 Days</span>
-                      <strong className="text-xl font-bold text-white block mt-1">42 Unique Views</strong>
-                      <span className="text-[9px] text-emerald-400 block font-mono mt-0.5">▲ +24% increase</span>
-                    </div>
-                    
-                    <div className="p-3 bg-slate-950 border border-slate-850 rounded-xl relative overflow-hidden">
-                      <span className="text-[9px] text-slate-500 font-mono uppercase">Hiring Managers Gaze</span>
-                      <strong className="text-xl font-semibold text-indigo-400 block mt-1">9 Recruiter Scans</strong>
-                      <span className="text-[8px] text-indigo-300 block font-mono">Prioritized via Student Premium</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-[10px] text-slate-450 font-mono block">Recent Profile Watchers:</span>
-                    {profileViews.map(pv => (
-                      <div key={pv.id} className="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-xl border border-slate-850 text-xs">
-                        <div className="flex gap-2 items-center">
-                          <img src={pv.viewerAvatar} alt={pv.viewerName} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                          <div className="min-w-0">
-                            <span className="font-bold text-white text-[11px] block">{pv.viewerName}</span>
-                            <span className="text-[9px] text-slate-400 block truncate">{pv.viewerHeadline}</span>
-                          </div>
-                        </div>
-                        <span className="text-[8px] text-slate-500 font-mono shrink-0">{pv.viewedAt.split(" ")[0]}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* CUSTOM SEO SETTINGS & CV DOWNLOAD */}
-                  <div className="mt-4 pt-3 border-t border-slate-850 flex flex-wrap gap-2 justify-between items-center">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9.5px] text-slate-400 font-mono">Custom Username URL:</span>
-                      <input 
-                        type="text" 
-                        value={customUrl} 
-                        onChange={(e) => setCustomUrl(e.target.value)}
-                        className="bg-slate-950 border border-slate-850 text-indigo-400 font-mono text-[9.5px] px-2 py-0.5 rounded focus:outline-none focus:border-indigo-500 w-36"
-                      />
-                    </div>
-                    <button 
-                      onClick={() => alert("CV Generated perfectly with complete reputation certificates & open source markers!")}
-                      className="p-1 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-mono text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                    >
-                      <FileText className="w-3.5 h-3.5" /> Download Professional Portfolio CV
-                    </button>
-                  </div>
-                </div>
-
-                {/* CONNECTION MESSAGING TRAY (Module 13 IMPROVEMENTS) */}
-                <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 md:p-5">
-                  <h3 className="font-sans font-bold text-white text-xs mb-3 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-indigo-400" /> Direct Messaging & Message Reactions
-                  </h3>
-                  
-                  <div className="bg-slate-950 rounded-xl p-3 border border-slate-850 space-y-3.5 max-h-56 overflow-y-auto mb-3">
-                    {messagesList.map(msg => (
-                      <div key={msg.id} className="space-y-1 text-xs">
-                        <div className="flex justify-between items-start">
-                          <strong className="text-indigo-300 font-mono">{msg.sender}</strong>
-                          <div className="flex gap-1">
-                            <button onClick={() => handleReactToMessage(msg.id, "👍")} className={`p-0.5 hover:bg-slate-900 rounded ${msg.reaction === "👍" ? "bg-slate-900 font-bold" : ""}`}>👍</button>
-                            <button onClick={() => handleReactToMessage(msg.id, "❤️")} className={`p-0.5 hover:bg-slate-900 rounded ${msg.reaction === "❤️" ? "bg-slate-900 font-bold" : ""}`}>❤️</button>
-                            <button onClick={() => handleReactToMessage(msg.id, "💡")} className={`p-0.5 hover:bg-slate-900 rounded ${msg.reaction === "💡" ? "bg-slate-900 font-bold" : ""}`}>💡</button>
-                          </div>
-                        </div>
-                        <p className="text-slate-300 font-sans leading-relaxed">{msg.content}</p>
-                        
-                        {msg.reaction && (
-                          <div className="inline-block mt-0.5 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 text-[10px]">
-                            {msg.reaction} <span className="text-[8px] text-slate-500">1</span>
-                          </div>
-                        )}
-
-                        {/* Thread replies */}
-                        {(msg.replies || []).map((rep, rIdx) => (
-                          <div key={rIdx} className="ml-4 pl-2 border-l border-indigo-500/30 text-slate-400 mt-1 italic text-[11px]">
-                            <strong className="text-white not-italic font-mono text-[10px] block">You:</strong> {rep}
-                          </div>
-                        ))}
-
-                        {/* Fast Reply tool */}
-                        <form onSubmit={(e) => {
-                          e.preventDefault();
-                          const fd = new FormData(e.currentTarget);
-                          const input = fd.get("threadReply") as string;
-                          if (input) {
-                            handleThreadReply(msg.id, input);
-                            e.currentTarget.reset();
-                          }
-                        }} className="flex gap-1.5 mt-2">
-                          <input 
-                            name="threadReply"
-                            type="text" 
-                            required
-                            placeholder="Type a reaction reply..." 
-                            className="bg-slate-900 border border-slate-800 text-slate-300 rounded px-2 py-0.5 text-[10px] flex-1 focus:outline-none focus:border-indigo-500"
-                          />
-                          <button type="submit" className="px-2 bg-indigo-600 hover:bg-indigo-500 rounded text-[9px] font-mono text-white transition-all cursor-pointer">Reply</button>
-                        </form>
-                      </div>
-                    ))}
-                  </div>
-
-                  <form onSubmit={handleSendSuiteMessage} className="flex gap-2">
-                    <input 
-                      type="text"
-                      required
-                      value={newMessageText}
-                      onChange={(e) => setNewMessageText(e.target.value)}
-                      placeholder="Compile a direct message for Priya or Vijay..."
-                      className="flex-1 bg-slate-950 border border-slate-850 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
-                    />
-                    <button
-                      type="submit"
-                      className="p-1 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-mono text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <Send className="w-3.5 h-3.5" /> Send Msg
-                    </button>
-                  </form>
-                </div>
-
-              </div>
+          {/* TAB: RECOMMENDATIONS PORTFOLIO */}
+          {activeSubTab === "recommendations" && (
+            <motion.div
+              key="recommendations-tab"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="p-1"
+            >
+              <RecommendationsPanel
+                recommendations={recommendations}
+                onApproveRecommendation={handleApproveRecommendation}
+                onRequestRecommendation={handleRequestRecommendation}
+                recTargetName={recTargetName}
+                setRecTargetName={setRecTargetName}
+                recText={recText}
+                setRecText={setRecText}
+                successMessage={recSuccessMsg}
+              />
             </motion.div>
           )}
 

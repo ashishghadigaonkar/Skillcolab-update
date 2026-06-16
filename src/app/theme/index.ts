@@ -1,6 +1,15 @@
-export { colors } from "./colors";
-export { spacing } from "./spacing";
-export { radius } from "./radius";
-export { typography } from "./typography";
-export { shadows } from "./shadows";
-export { animations } from "./animations";
+import { colors } from "./colors";
+import { spacing } from "./spacing";
+import { typography } from "./typography";
+import { shadows } from "./shadows";
+import { radius } from "./radius";
+import { animations } from "./animations";
+
+export {
+  colors,
+  spacing,
+  typography,
+  shadows,
+  radius,
+  animations
+};

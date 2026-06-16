@@ -1,8 +1,10 @@
 import React from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   Trophy, FolderPlus, Users, MessageSquare, LayoutGrid, 
   Sparkles, Award, Layers, Cpu, BookOpen, GraduationCap, 
-  Shield, Compass, Bell, BellOff, X, Menu, ArrowUpRight, User 
+  Shield, Compass, Bell, BellOff, X, Menu, ArrowUpRight, User,
+  Sun, Moon
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -15,6 +17,8 @@ interface DashboardLayoutProps {
   notifications: any[];
   handleMarkNotificationsRead: () => void;
   navigateToTab: (tabId: string) => void;
+  theme?: "light" | "dark";
+  onToggleTheme?: () => void;
   children: React.ReactNode;
 }
 
@@ -28,6 +32,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   notifications,
   handleMarkNotificationsRead,
   navigateToTab,
+  theme = "dark",
+  onToggleTheme,
   children
 }) => {
   // Static state placeholders to feed widgets perfectly:
@@ -95,6 +101,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
           )}
 
+          {onToggleTheme && (
+            <button 
+              onClick={onToggleTheme}
+              className="p-1.5 rounded-lg border border-slate-900 hover:bg-slate-900 transition-colors cursor-pointer relative flex items-center justify-center text-slate-400 hover:text-white"
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            >
+              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+            </button>
+          )}
+
           <div className="relative">
             <button 
               onClick={() => navigateToTab("home")} 
@@ -124,154 +140,191 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           `}
         >
           <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 h-full flex flex-col justify-between overflow-y-auto custom-scrollbar">
-            <div className="space-y-4">
-              <div className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-widest px-1.5">
-                Navigation Desk
+            <div className="space-y-5">
+              <div className="text-slate-500 text-[10px] font-mono font-extrabold uppercase tracking-widest px-1.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Navigation Hub
               </div>
               
-              <nav className="space-y-1 text-xs">
-                <button
-                  onClick={() => navigateToTab("home")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "home" || activeTab === "dashboard"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <LayoutGrid className="w-4 h-4" /> Home Feed
-                </button>
+              <nav className="space-y-4 text-xs">
+                {/* HOME */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Home</span>
+                  <button
+                    onClick={() => navigateToTab("home")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "home" || activeTab === "dashboard"
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <LayoutGrid className="w-4 h-4" /> Home Feed
+                  </button>
+                </div>
 
-                <button
-                  onClick={() => navigateToTab("projects")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "projects"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <FolderPlus className="w-4 h-4 text-emerald-400" /> Projects Board
-                </button>
+                {/* COMMUNITY */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Community</span>
+                  
+                  <button
+                    onClick={() => navigateToTab("professional_suite")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "professional_suite"
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Award className="w-4 h-4 text-pink-400" /> Peer Network
+                  </button>
 
-                <button
-                  onClick={() => navigateToTab("teams")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "teams"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Users className="w-4 h-4 text-indigo-400" /> Team Builder
-                </button>
+                  <button
+                    onClick={() => navigateToTab("open_source")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "open_source"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-855"
+                    }`}
+                  >
+                    <Cpu className="w-4 h-4 text-emerald-300" /> Open Source Hub
+                  </button>
 
-                <button
-                  onClick={() => navigateToTab("chats")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "chats"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4 text-pink-400" /> Team Chats
-                </button>
+                  <button
+                    onClick={() => navigateToTab("hackathons")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "hackathons"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4 text-amber-400" /> Hackathons Hub
+                  </button>
+                </div>
 
-                <button
-                  onClick={() => navigateToTab("ai_career_suite")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "ai_career_suite"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 text-amber-300" /> AI Career Suite
-                </button>
+                {/* BUILD */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Build</span>
 
-                <button
-                  onClick={() => navigateToTab("professional_suite")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "professional_suite"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Award className="w-4 h-4 text-emerald-400" /> Career & Network Hub
-                </button>
+                  <button
+                    onClick={() => navigateToTab("projects")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "projects"
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <FolderPlus className="w-4 h-4 text-emerald-400" /> Projects Board
+                  </button>
 
-                <button
-                  onClick={() => navigateToTab("startup_launchpad")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "startup_launchpad"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Layers className="w-4 h-4 text-violet-400" /> Startup Hub
-                </button>
+                  <button
+                    onClick={() => navigateToTab("teams")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "teams"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-indigo-400" /> Team Builder
+                  </button>
 
-                <button
-                  onClick={() => navigateToTab("open_source")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "open_source"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-855"
-                  }`}
-                >
-                  <Cpu className="w-4 h-4 text-emerald-300" /> Open Source Hub
-                </button>
+                  <button
+                    onClick={() => navigateToTab("startup_launchpad")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "startup_launchpad"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Layers className="w-4 h-4 text-violet-400" /> Startup Launchpad
+                  </button>
+                </div>
+
+                {/* CAREER */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Career</span>
+
+                  <button
+                    onClick={() => navigateToTab("ai_career_suite")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "ai_career_suite"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300" /> AI Career Suite
+                  </button>
+
+                  <button
+                    onClick={() => navigateToTab("internships")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "internships"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4 text-cyan-400" /> Internships Board
+                  </button>
+
+                  <button
+                    onClick={() => navigateToTab("mentors")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "mentors"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <GraduationCap className="w-4 h-4 text-orange-400" /> Mentors Network
+                  </button>
+
+                  <button
+                    onClick={() => navigateToTab("ai_matcher")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "ai_matcher"
+                        ? "bg-indigo-650 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <Cpu className="w-4 h-4 text-fuchsia-400" /> AI Matcher
+                  </button>
+                </div>
+
+                {/* MESSAGES */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Messages</span>
+                  <button
+                    onClick={() => navigateToTab("chats")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "chats"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4 text-indigo-400" /> Collaboration Chats
+                  </button>
+                </div>
+
+                {/* PROFILE */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Profile</span>
+                  <button
+                    onClick={() => navigateToTab("profile")}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                      activeTab === "profile"
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white hover:bg-slate-850"
+                    }`}
+                  >
+                    <User className="w-4 h-4 text-teal-400" /> My Professional Profile
+                  </button>
+                </div>
 
                 <div className="h-px bg-slate-850/60 my-2" />
 
-                <button
-                  onClick={() => navigateToTab("hackathons")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "hackathons"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Trophy className="w-4 h-4 text-amber-400" /> Hackathons Hub
-                </button>
-
-                <button
-                  onClick={() => navigateToTab("internships")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "internships"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <BookOpen className="w-4 h-4 text-cyan-400" /> Internships
-                </button>
-
-                <button
-                  onClick={() => navigateToTab("mentors")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "mentors"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <GraduationCap className="w-4 h-4 text-orange-400" /> Mentors Network
-                </button>
-
-                <button
-                  onClick={() => navigateToTab("ai_matcher")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                    activeTab === "ai_matcher"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Cpu className="w-4 h-4 text-fuchsia-400" /> AI Matcher
-                </button>
-
-                <div className="h-px bg-slate-850/60 my-2" />
-
+                {/* UTILITY */}
                 <button
                   onClick={() => navigateToTab("admin")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer text-xs ${
                     activeTab === "admin"
                       ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
+                      : "text-slate-500 hover:text-white hover:bg-slate-850"
                   }`}
                 >
                   <Shield className="w-4 h-4" /> Admin Console
@@ -279,10 +332,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
                 <button
                   onClick={() => navigateToTab("blueprint")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-left transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer text-xs ${
                     activeTab === "blueprint"
                       ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-400 hover:text-white hover:bg-slate-850"
+                      : "text-slate-500 hover:text-white hover:bg-slate-850"
                   }`}
                 >
                   <Compass className="w-4 h-4 text-sky-400" /> Figma PRD
@@ -411,75 +464,181 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
 
       {/* 3. LOCKED BOTTOM BAR FOR MOBILE PORTAL */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-slate-950/90 backdrop-blur-lg border-t border-slate-900 flex justify-around items-center py-2 px-1 text-center select-none shadow-2xl">
-        <button
-          onClick={() => navigateToTab("home")}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-12 py-1 relative cursor-pointer active:scale-90 transition-all ${
-            activeTab === "home" || activeTab === "dashboard" ? "text-indigo-400" : "text-slate-400"
-          }`}
-        >
-          <LayoutGrid className="w-5 h-5" />
-          <span className="text-[9px] font-semibold leading-none">Home</span>
-          {(activeTab === "home" || activeTab === "dashboard") && (
-            <span className="w-1 h-1 rounded-full bg-indigo-400 mt-0.5" />
-          )}
-        </button>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--surface)] backdrop-blur-md border-t border-[var(--border)] grid grid-cols-5 h-16 pb-2.5 pt-2 px-1 select-none shadow-[0_-8px_30px_rgba(0,0,0,0.1)] transition-all">
+        {(() => {
+          const isHomeActive = activeTab === "home" || activeTab === "dashboard";
+          return (
+            <button
+              onClick={() => navigateToTab("home")}
+              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
+                isHomeActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
+              }`}
+            >
+              {isHomeActive && (
+                <motion.div
+                  layoutId="bottomNavActivePill"
+                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ scale: isHomeActive ? 1.1 : 1, y: isHomeActive ? -1 : 0 }}
+                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </motion.div>
+              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Home</span>
+              {isHomeActive && (
+                <motion.span
+                  layoutId="bottomNavDot"
+                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+            </button>
+          );
+        })()}
 
-        <button
-          onClick={() => navigateToTab("projects")}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-12 py-1 relative cursor-pointer active:scale-90 transition-all ${
-            activeTab === "projects" ? "text-indigo-400" : "text-slate-400"
-          }`}
-        >
-          <FolderPlus className="w-5 h-5 text-emerald-400" />
-          <span className="text-[9px] font-semibold leading-none">Projects</span>
-          {activeTab === "projects" && (
-            <span className="w-1 h-1 rounded-full bg-indigo-400 mt-0.5" />
-          )}
-        </button>
+        {(() => {
+          const isProjectsActive = activeTab === "projects";
+          return (
+            <button
+              onClick={() => navigateToTab("projects")}
+              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
+                isProjectsActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
+              }`}
+            >
+              {isProjectsActive && (
+                <motion.div
+                  layoutId="bottomNavActivePill"
+                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ scale: isProjectsActive ? 1.1 : 1, y: isProjectsActive ? -1 : 0 }}
+                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+              >
+                <FolderPlus className="w-5 h-5" />
+              </motion.div>
+              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Build</span>
+              {isProjectsActive && (
+                <motion.span
+                  layoutId="bottomNavDot"
+                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+            </button>
+          );
+        })()}
 
-        <button
-          onClick={() => navigateToTab("explore")}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-12 py-1 relative cursor-pointer active:scale-90 transition-all ${
-            activeTab === "explore" ? "text-indigo-400" : "text-slate-400"
-          }`}
-        >
-          <div className="w-7 h-7 rounded-full bg-indigo-600 border border-indigo-400/20 shadow flex items-center justify-center -mt-4">
-            <Compass className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-[9px] font-semibold leading-none mt-0.5">Explore</span>
-          {activeTab === "explore" && (
-            <span className="w-1 h-1 rounded-full bg-indigo-400 mt-0.5" />
-          )}
-        </button>
+        {(() => {
+          const isExploreActive = activeTab === "explore";
+          return (
+            <button
+              onClick={() => navigateToTab("explore")}
+              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
+                isExploreActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
+              }`}
+            >
+              {isExploreActive && (
+                <motion.div
+                  layoutId="bottomNavActivePill"
+                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ scale: isExploreActive ? 1.1 : 1, y: isExploreActive ? -1 : 0 }}
+                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+              >
+                <Compass className="w-5 h-5" />
+              </motion.div>
+              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Explore</span>
+              {isExploreActive && (
+                <motion.span
+                  layoutId="bottomNavDot"
+                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+            </button>
+          );
+        })()}
 
-        <button
-          onClick={() => navigateToTab("chats")}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-12 py-1 relative cursor-pointer active:scale-90 transition-all ${
-            activeTab === "chats" ? "text-indigo-400" : "text-slate-450"
-          }`}
-        >
-          <div className="relative">
-            <MessageSquare className="w-5 h-5 text-pink-400" />
-          </div>
-          <span className="text-[9px] font-semibold leading-none">Chats</span>
-          {activeTab === "chats" && (
-            <span className="w-1 h-1 rounded-full bg-indigo-400 mt-0.5" />
-          )}
-        </button>
+        {(() => {
+          const isChatsActive = activeTab === "chats";
+          return (
+            <button
+              onClick={() => navigateToTab("chats")}
+              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
+                isChatsActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
+              }`}
+            >
+              {isChatsActive && (
+                <motion.div
+                  layoutId="bottomNavActivePill"
+                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ scale: isChatsActive ? 1.1 : 1, y: isChatsActive ? -1 : 0 }}
+                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+              >
+                <MessageSquare className="w-5 h-5" />
+              </motion.div>
+              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Chats</span>
+              {isChatsActive && (
+                <motion.span
+                  layoutId="bottomNavDot"
+                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+            </button>
+          );
+        })()}
 
-        <button
-          onClick={() => navigateToTab("profile")}
-          className={`flex flex-col items-center justify-center gap-0.5 min-w-12 py-1 relative cursor-pointer active:scale-90 transition-all ${
-            activeTab === "profile" ? "text-indigo-400" : "text-slate-400"
-          }`}
-        >
-          <User className="w-5 h-5 text-indigo-300" />
-          <span className="text-[9px] font-semibold leading-none">Profile</span>
-          {activeTab === "profile" && (
-            <span className="w-1 h-1 rounded-full bg-indigo-400 mt-0.5" />
-          )}
-        </button>
+        {(() => {
+          const isProfileActive = activeTab === "profile";
+          return (
+            <button
+              onClick={() => navigateToTab("profile")}
+              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
+                isProfileActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
+              }`}
+            >
+              {isProfileActive && (
+                <motion.div
+                  layoutId="bottomNavActivePill"
+                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ scale: isProfileActive ? 1.1 : 1, y: isProfileActive ? -1 : 0 }}
+                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+              >
+                <User className="w-5 h-5" />
+              </motion.div>
+              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Profile</span>
+              {isProfileActive && (
+                <motion.span
+                  layoutId="bottomNavDot"
+                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                />
+              )}
+            </button>
+          );
+        })()}
       </nav>
 
     </div>

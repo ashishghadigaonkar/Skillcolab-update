@@ -1,20 +1,30 @@
-/**
- * Enterprise design colors token database.
- */
+// Centralised Design System Color Tokens representing full-SaaS brand specs
 export const colors = {
-  canvas: "bg-slate-950",
-  surface: "bg-slate-900",
-  surfaceHover: "hover:bg-slate-850",
-  border: "border-slate-850",
-  borderLight: "border-slate-800",
-  textPrimary: "text-slate-100",
-  textSecondary: "text-slate-400",
-  textMuted: "text-slate-500",
-  brand: "bg-indigo-600 hover:bg-indigo-500 text-white",
-  brandText: "text-indigo-400",
-  brandLight: "bg-indigo-950/20 border-indigo-500/20",
-  success: "text-emerald-400 bg-emerald-950/20 border-emerald-500/20",
-  warning: "text-amber-400 bg-amber-950/20 border-amber-500/20",
-  error: "text-red-400 bg-red-950/20 border-red-500/20",
-  accent: "text-pink-400 bg-pink-950/20 border-pink-500/20"
+  bg: {
+    base: "bg-slate-950",
+    surface: "bg-slate-900",
+    surfaceMuted: "bg-slate-955",
+    popover: "bg-slate-950/95",
+  },
+  border: {
+    accent: "border-slate-800",
+    accentLight: "border-slate-850",
+    focus: "border-indigo-500",
+    indigoLight: "border-indigo-500/20",
+  },
+  text: {
+    white: "text-white",
+    silver: "text-slate-100",
+    muted: "text-slate-400",
+    indigo: "text-indigo-400",
+    amber: "text-amber-400",
+    emerald: "text-emerald-400",
+  },
+  brand: {
+    indigo: "indigo-600",
+    indigoHover: "indigo-500",
+    indigoPressed: "indigo-650",
+    rose: "rose-950",
+    roseHover: "rose-700",
+  }
 };

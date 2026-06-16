@@ -17,6 +17,7 @@ const RecommendationEngine = lazy(() => import("../../modules/analytics/pages/Re
 const AdminConsole = lazy(() => import("../../modules/admin/pages/AdminConsole"));
 const DeveloperBlueprint = lazy(() => import("../../modules/verification/pages/DeveloperBlueprint"));
 const MyUserProfile = lazy(() => import("../../modules/profiles/pages/MyUserProfile"));
+const ExploreHub = lazy(() => import("../../modules/explore/pages/ExploreHub"));
 
 interface AppRouterProps {
   activeTab: string;
@@ -25,6 +26,8 @@ interface AppRouterProps {
   onUpdateCurrentUser: (updated: any) => void;
   projects: any[];
   handleProjectSuccess: () => void;
+  selectedProfileId: string | null;
+  viewUserProfile: (userId: string) => void;
 }
 
 // Simple fallback skeleton spinner
@@ -46,35 +49,20 @@ export const AppRouter: React.FC<AppRouterProps> = ({
   currentUser,
   onUpdateCurrentUser,
   projects,
-  handleProjectSuccess
+  handleProjectSuccess,
+  selectedProfileId,
+  viewUserProfile
 }) => {
   return (
     <Suspense fallback={<LazyLoader />}>
       {/* 1. HOME & TIMELINE VIEWS */}
       {(activeTab === "home" || activeTab === "dashboard") && (
         <div className="space-y-4 text-left">
-          <div className="bg-gradient-to-br from-indigo-950/50 to-slate-900 border border-slate-850 p-4 rounded-2xl flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-[9.5px] font-mono text-indigo-400 font-bold uppercase tracking-wider block">
-                Welcome Back, Student Developer
-              </span>
-              <h2 className="text-md md:text-lg font-extrabold text-white leading-tight">
-                Hey {currentUser ? currentUser.fullName : "User"}! Keep climbing.
-              </h2>
-              <p className="text-[10.5px] text-slate-400 leading-normal max-w-md">
-                Apply to join local hackathon squads, commit code to claim verified OSS prizes, or consult senior mentors.
-              </p>
-            </div>
-
-            <div className="text-right shrink-0">
-              <span className="text-2xl font-extrabold font-mono text-amber-400 leading-none block">
-                {currentUser ? currentUser.reputationPoints : 100}
-              </span>
-              <span className="text-[9px] text-slate-500 font-mono block uppercase">Rep Points</span>
-            </div>
-          </div>
-
-          <HomeFeed />
+          <HomeFeed 
+            navigateToTab={navigateToTab} 
+            currentUser={currentUser}
+            onViewProfile={viewUserProfile}
+          />
         </div>
       )}
 
@@ -88,10 +76,11 @@ export const AppRouter: React.FC<AppRouterProps> = ({
           projects={projects}
           fetchProjects={handleProjectSuccess}
           onRosterUpdated={handleProjectSuccess}
+          onViewProfile={viewUserProfile}
         />
       )}
 
-      {activeTab === "chats" && <WorkspaceChat />}
+      {activeTab === "chats" && <WorkspaceChat currentUser={currentUser} />}
       {activeTab === "ai_career_suite" && <AICareerSuite />}
       {activeTab === "startup_launchpad" && <StartupLaunchpad />}
       {activeTab === "open_source" && <OpenSourceHub />}
@@ -101,7 +90,9 @@ export const AppRouter: React.FC<AppRouterProps> = ({
       {activeTab === "internships" && (
         <InternshipBoard onApplicationSuccess={handleProjectSuccess} />
       )}
-      {activeTab === "mentors" && <MentorNetwork />}
+      {activeTab === "mentors" && (
+        <MentorNetwork onViewProfile={viewUserProfile} />
+      )}
       {activeTab === "ai_matcher" && <RecommendationEngine />}
       
       {/* 3. PROTECTED ROLE GUARDS */}
@@ -133,19 +124,24 @@ export const AppRouter: React.FC<AppRouterProps> = ({
         />
       )}
 
-      {activeTab === "profile" && <MyUserProfile />}
+      {activeTab === "profile" && (
+        <MyUserProfile 
+          userId={selectedProfileId}
+          currentUserId={currentUser?.id}
+          onViewProfile={viewUserProfile}
+          onBackToFeed={() => navigateToTab("home")}
+          onUpdateCurrentUser={onUpdateCurrentUser}
+        />
+      )}
 
       {/* 4. EXPLORE HUB FOR MOBILE */}
       {activeTab === "explore" && (
-        <div className="space-y-5 text-left">
-          <div className="bg-slate-900 border border-slate-850 p-4 rounded-2xl">
-            <span className="text-xs font-bold font-mono text-indigo-400 uppercase tracking-widest block mb-1">
-              University Ecosystem
-            </span>
-            <h2 className="text-md font-bold text-white">Explore Campus Collaboration Channels</h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">Instant matching portals for hackathons, technical advisories, internship recruitments, and open-source.</p>
-          </div>
+        <ExploreHub onNavigate={navigateToTab} currentUser={currentUser} />
+      )}
 
+      {/* DISMISSED STATIC MENU NODES */}
+      {false && (
+        <div>
           <div className="grid grid-cols-2 gap-3.5 text-xs">
             <div 
               onClick={() => navigateToTab("teams")}

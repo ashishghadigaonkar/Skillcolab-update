@@ -112,7 +112,7 @@ export default function LoadingSkeleton({ type = "card", count = 3 }: LoadingSke
           </div>
 
           <div className="space-y-2">
-            <div className="h-2.5 bg-slate-80 w-12 rounded" />
+            <div className="h-2.5 bg-slate-800 w-12 rounded" />
             {/* Tag line items */}
             <div className="flex flex-wrap gap-1.5">
               <div className="h-4 bg-slate-800 rounded-md w-10" />

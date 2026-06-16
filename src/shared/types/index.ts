@@ -51,6 +51,22 @@ export interface User {
   badges: string[];
   connectionsCount: number;
   followersCount: number;
+  theme?: "light" | "dark";
+  username?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  college?: string;
+  branch?: string;
+  graduationYear?: number;
+  interests?: string[];
+  careerGoals?: string;
+  isEmailVerified?: boolean;
+  onboardingCompleted?: boolean;
+  provider?: string;
+  accountStatus?: string;
+  googleId?: string;
+  githubId?: string;
 }
 
 export interface Project {
@@ -205,6 +221,18 @@ export interface Message {
   senderAvatar: string;
   content: string;
   timestamp: string;
+  reactions?: { [emoji: string]: number };
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  isPinned?: boolean;
+  replyToId?: string;
+  replyToText?: string;
+  replyToSender?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: string;
+  voiceUrl?: string;
+  voiceDuration?: string;
 }
 
 export interface ChatThread {
@@ -216,6 +244,8 @@ export interface ChatThread {
   lastMessageTime?: string;
   unreadCount: number;
   messages: Message[];
+  senderId?: string;
+  receiverId?: string;
 }
 
 export interface Notification {

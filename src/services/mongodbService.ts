@@ -57,6 +57,20 @@ const UserSchema = new Schema<IUserDocument>(
     firebaseUid: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
     fullName: { type: String, required: true },
+    firstName: { type: String, default: "" },
+    lastName: { type: String, default: "" },
+    username: { type: String, default: "" },
+    password: { type: String, default: "" },
+    college: { type: String, default: "" },
+    branch: { type: String, default: "" },
+    graduationYear: { type: Number, default: null },
+    interests: { type: [String], default: [] },
+    careerGoals: { type: String, default: "" },
+    isEmailVerified: { type: Boolean, default: false },
+    googleId: { type: String, default: "" },
+    githubId: { type: String, default: "" },
+    provider: { type: String, default: "email" },
+    accountStatus: { type: String, default: "Active" },
     role: { 
       type: String, 
       enum: Object.values(UserRole), 
@@ -94,7 +108,8 @@ const UserSchema = new Schema<IUserDocument>(
     reputationPoints: { type: Number, default: 100 },
     badges: { type: [String], default: [] },
     connectionsCount: { type: Number, default: 0 },
-    followersCount: { type: Number, default: 0 }
+    followersCount: { type: Number, default: 0 },
+    theme: { type: String, enum: ["light", "dark"], default: "light" }
   },
   {
     timestamps: true
@@ -240,13 +255,46 @@ export interface IActivityDocument extends Document {
   authorName: string;
   authorRole: string;
   authorAvatar: string;
-  type: "CREATE_PROJECT" | "JOIN_TEAM" | "EARN_ACHIEVEMENT" | "JOIN_HACKATHON" | "STARTUP_POST";
+  type: string; // SocialPost, ProjectUpdate, HackathonOpportunity, etc.
   content: string;
-  meta: {
+  createdAt?: Date;
+  skills?: string[];
+  likesCount: number;
+  commentsCount?: number;
+  sharesCount?: number;
+  repostsCount?: number;
+  reportsCount?: number;
+  likes?: string[]; // Array of userIds who liked
+  saves?: string[]; // Array of userIds who saved
+  comments?: any[];
+  projectMeta?: {
+    id?: string;
+    title: string;
+    tagline: string;
+    teamSizeLimit?: number;
+    currentTeamSize?: number;
+    difficulty?: string;
+  };
+  opportunityMeta?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    role?: string;
+    companyName?: string;
+    companyLogo?: string;
+    deadline?: string;
+    location?: string;
+    opportunityType?: string; // hackathon, internship, startup, open-source, mentor
+    mentorAvailability?: string;
+    price?: string;
+    githubLink?: string;
+    issueTitle?: string;
+    starsCount?: number;
+  };
+  meta?: {
     targetId?: string;
     targetTitle?: string;
   };
-  likesCount: number;
 }
 
 const ActivitySchema = new Schema<IActivityDocument>({
@@ -256,11 +304,43 @@ const ActivitySchema = new Schema<IActivityDocument>({
   authorAvatar: { type: String, required: true },
   type: { type: String, required: true },
   content: { type: String, required: true },
+  skills: { type: [String], default: [] },
+  likesCount: { type: Number, default: 0 },
+  commentsCount: { type: Number, default: 0 },
+  sharesCount: { type: Number, default: 0 },
+  repostsCount: { type: Number, default: 0 },
+  reportsCount: { type: Number, default: 0 },
+  likes: { type: [String], default: [] },
+  saves: { type: [String], default: [] },
+  comments: { type: [Schema.Types.Mixed], default: [] } as any,
+  projectMeta: {
+    id: { type: String },
+    title: { type: String },
+    tagline: { type: String },
+    teamSizeLimit: { type: Number },
+    currentTeamSize: { type: Number },
+    difficulty: { type: String }
+  },
+  opportunityMeta: {
+    id: { type: String },
+    title: { type: String },
+    description: { type: String },
+    role: { type: String },
+    companyName: { type: String },
+    companyLogo: { type: String },
+    deadline: { type: String },
+    location: { type: String },
+    opportunityType: { type: String },
+    mentorAvailability: { type: String },
+    price: { type: String },
+    githubLink: { type: String },
+    issueTitle: { type: String },
+    starsCount: { type: Number }
+  },
   meta: {
     targetId: { type: String },
     targetTitle: { type: String }
-  },
-  likesCount: { type: Number, default: 0 }
+  }
 }, { timestamps: true });
 
 export const ActivityModel: Model<IActivityDocument> =
@@ -699,6 +779,11 @@ export class MongoDBService {
    */
   async connect(): Promise<void> {
     if (this.isConnected) return;
+
+    if (!process.env.MONGODB_URI) {
+      console.info("[MongoDBService] No MONGODB_URI provided in environment. SkillCollab automatically falls back to full simulated key-value and local file-based (mock_db_store.json) storage engine.");
+      return;
+    }
 
     try {
       // Connect to MongoDB Atlas or localhost

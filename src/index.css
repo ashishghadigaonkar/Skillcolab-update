@@ -1,1 +1,317 @@
 @import "tailwindcss";
+
+@theme {
+  --color-theme-background: var(--background);
+  --color-theme-background-secondary: var(--background-secondary);
+  --color-theme-surface: var(--surface);
+  --color-theme-surface-secondary: var(--surface-secondary);
+  --color-theme-surface-elevated: var(--surface-elevated);
+  --color-theme-card: var(--card);
+  --color-theme-card-hover: var(--card-hover);
+  --color-theme-border: var(--border);
+  --color-theme-divider: var(--divider);
+  --color-theme-text-primary: var(--text-primary);
+  --color-theme-text-secondary: var(--text-secondary);
+  --color-theme-text-muted: var(--text-muted);
+  --color-theme-accent: var(--accent);
+  --color-theme-accent-hover: var(--accent-hover);
+  --color-theme-success: var(--success);
+  --color-theme-warning: var(--warning);
+  --color-theme-danger: var(--danger);
+  --color-theme-info: var(--info);
+  --color-theme-input-background: var(--input-background);
+  --color-theme-input-border: var(--input-border);
+}
+
+/* ==========================================================================
+   GLOBAL THEME DESIGN SYSTEM VARIABLES
+   ========================================================================== */
+
+:root, html.light, .light {
+  --background: #F8FAFC;
+  --background-secondary: #F1F5F9;
+  --surface: #FFFFFF;
+  --surface-secondary: #F8FAFC;
+  --surface-elevated: #FFFFFF;
+  --card: #FFFFFF;
+  --card-hover: #F1F5F9;
+  --border: #E2E8F0;
+  --divider: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --accent: #6366F1;
+  --accent-hover: #4F46E5;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
+  --input-background: #FFFFFF;
+  --input-border: #CBD5E1;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+
+  background-color: var(--background) !important;
+  color: var(--text-primary) !important;
+}
+
+html.dark, .dark {
+  --background: #0B1120;
+  --background-secondary: #0F172A;
+  --surface: #111827;
+  --surface-secondary: #1E293B;
+  --surface-elevated: #1F2937;
+  --card: #1E293B;
+  --card-hover: #334155;
+  --border: #334155;
+  --divider: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --accent: #818CF8;
+  --accent-hover: #6366F1;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --info: #60A5FA;
+  --input-background: #111827;
+  --input-border: #334155;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+
+  background-color: var(--background) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   DYNAMIC COMPONENT MAPPING - ZERO STYLE DRIFT
+   ========================================================================== */
+
+html, body {
+  background-color: var(--background) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 1. UNIVERSAL COMPONENT BACKGROUND OVERRIDES */
+.bg-slate-950, 
+.bg-zinc-950,
+.bg-black { 
+  background-color: var(--background) !important; 
+}
+
+.bg-slate-900,
+.bg-zinc-900 { 
+  background-color: var(--surface) !important; 
+}
+
+.bg-slate-850,
+.bg-zinc-800 { 
+  background-color: var(--surface-secondary) !important; 
+}
+
+.bg-slate-955 { 
+  background-color: var(--background-secondary) !important; 
+}
+
+.bg-slate-800 { 
+  background-color: var(--surface-elevated) !important; 
+}
+
+.bg-white {
+  background-color: var(--surface) !important;
+}
+
+/* Translucent layer overrides so light mode has transparent cards/sidebars matching SaaS specs */
+[class*="bg-slate-950/"],
+[class*="bg-black/"] {
+  background-color: var(--background-secondary) !important;
+}
+
+[class*="bg-slate-900/"] {
+  background-color: var(--surface-secondary) !important;
+}
+
+[class*="bg-slate-955/"] {
+  background-color: var(--background-secondary) !important;
+}
+
+[class*="bg-slate-850/"] {
+  background-color: var(--surface-secondary) !important;
+}
+
+[class*="bg-indigo-950/"] {
+  background-color: var(--background-secondary) !important;
+}
+
+/* 2. BORDERS ADAPTATIONS */
+.border-slate-800,
+.border-slate-850,
+.border-slate-900,
+.border-slate-900\/80,
+.border-gray-800,
+[class*="border-slate-"],
+[class*="border-zinc-"] { 
+  border-color: var(--border) !important; 
+}
+
+/* 3. SOLID BRAND BUTTONS & HIGH CONTRAST PRESENTS */
+.bg-indigo-600, 
+.bg-indigo-500,
+.bg-indigo-650,
+.bg-indigo-700,
+.bg-emerald-600,
+.bg-emerald-500,
+.bg-red-600,
+.bg-red-650 {
+  background-color: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+.bg-indigo-650 *,
+.bg-indigo-600 *, 
+.bg-indigo-500 *,
+.bg-indigo-700 *,
+.bg-emerald-600 *,
+.bg-emerald-500 *,
+.bg-red-600 *,
+.bg-red-650 * {
+  color: #ffffff !important;
+}
+
+/* 4. TEXT OVERRIDES */
+.text-white, 
+.text-slate-100, 
+.text-slate-200 { 
+  color: var(--text-primary) !important; 
+}
+
+.text-black {
+  color: var(--text-primary) !important;
+}
+
+.text-slate-300, 
+.text-slate-400, 
+.text-gray-300 { 
+  color: var(--text-secondary) !important; 
+}
+
+.text-slate-450, 
+.text-slate-500 { 
+  color: var(--text-muted) !important; 
+}
+
+.text-indigo-400, 
+.text-indigo-350 { 
+  color: var(--accent) !important; 
+}
+
+/* 5. INPUTS & FORM CONTROLS */
+input, select, textarea {
+  background-color: var(--input-background) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+input::placeholder, select::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* 6. ADVANCED DYNAMIC OVERRIDES FOR THE LIGHT THEME */
+/* Subtly replace dark mode gradient cards & headers with beautiful, highly legible light mode compositions */
+.light .bg-gradient-to-r,
+.light .bg-gradient-to-br,
+.light .bg-gradient-to-tr {
+  background-image: linear-gradient(135deg, #F8FAFC 0%, #EEF2F6 100%) !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Specific Explore + News Hero Banner in Light Mode: subtle light indigo/pink/cyan vibe as requested */
+.light [class*="bg-gradient"][class*="from-slate-900"][class*="to-indigo-950"] {
+  background-image: linear-gradient(135deg, #EEF2F6 0%, #E0E7FF 100%) !important;
+  border-color: #E2E8F0 !important;
+}
+
+.light [class*="bg-gradient"][class*="to-amber-950"] {
+  background-image: linear-gradient(135deg, #FFFFFF 0%, #FEF3C7 100%) !important;
+  border-color: #FCD34D !important;
+}
+
+.light [class*="bg-gradient"][class*="to-rose-950"] {
+  background-image: linear-gradient(135deg, #FFFFFF 0%, #FFE4E6 100%) !important;
+  border-color: #FECDD3 !important;
+}
+
+/* Direct adjustments for buttons, containers, cards */
+.light .bg-indigo-950\/20 {
+  background-color: #e0e7ff !important;
+}
+
+.light .bg-\[\#111827\] {
+  background-color: #ffffff !important;
+}
+
+.light .text-indigo-100 {
+  color: #4f46e5 !important;
+}
+
+.light .text-indigo-200 {
+  color: #4338ca !important;
+}
+
+.light .bg-emerald-950\/30 {
+  background-color: #d1fae5 !important;
+}
+
+.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+.light .bg-pink-950\/30 {
+  background-color: #fce7f3 !important;
+}
+
+.light .text-pink-400 {
+  color: #db2777 !important;
+}
+
+.light .bg-rose-950\/30 {
+  background-color: #ffe4e6 !important;
+}
+
+.light .text-rose-400 {
+  color: #e11d48 !important;
+}
+
+.light .bg-cyan-950\/30 {
+  background-color: #ecfeff !important;
+}
+
+.light .text-cyan-400 {
+  color: #0891b2 !important;
+}
+
+.light .bg-amber-950\/30 {
+  background-color: #fef3c7 !important;
+}
+
+.light .text-amber-400 {
+  color: #d97706 !important;
+}
+
+/* Scrollbar tuning for themes */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

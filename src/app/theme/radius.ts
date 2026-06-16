@@ -1,11 +1,9 @@
-/**
- * Border radius design tokens.
- */
+// Centralised Design System border-radius tokens
 export const radius = {
-  sm: "rounded-md",
-  md: "rounded-lg",
-  lg: "rounded-xl",
-  xl: "rounded-2xl",
-  "2xl": "rounded-3xl",
-  full: "rounded-full"
+  sm: "rounded-sm",
+  md: "rounded-md",
+  lg: "rounded-lg",
+  xl: "rounded-xl",
+  xxl: "rounded-2xl",
+  full: "rounded-full",
 };

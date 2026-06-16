@@ -15,9 +15,10 @@ interface TeamBuilderProps {
   onRosterUpdated?: () => void;
   projects: Project[];
   fetchProjects: () => void;
+  onViewProfile?: (userId: string) => void;
 }
 
-export default function TeamBuilder({ onRosterUpdated, projects, fetchProjects }: TeamBuilderProps) {
+export default function TeamBuilder({ onRosterUpdated, projects, fetchProjects, onViewProfile }: TeamBuilderProps) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [applications, setApplications] = useState<TeamApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,16 +36,12 @@ export default function TeamBuilder({ onRosterUpdated, projects, fetchProjects }
   const fetchTeamsAndApps = async () => {
     setLoading(true);
     try {
-      const [resTeams, resApps] = await Promise.all([
-        fetch("/api/teams"),
-        fetch("/api/applications")
+      const [teamsData, appsData] = await Promise.all([
+        fetch("/api/teams").then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch("/api/applications").then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
-      if (resTeams.ok && resApps.ok) {
-        const teamsData = await resTeams.json();
-        const appsData = await resApps.json();
-        setTeams(teamsData);
-        setApplications(appsData);
-      }
+      setTeams(teamsData);
+      setApplications(appsData);
     } catch (e) {
       console.error("Failed to fetch logs in workspace:", e);
     } finally {
@@ -206,16 +203,23 @@ export default function TeamBuilder({ onRosterUpdated, projects, fetchProjects }
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {t.members.map((m, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-2.5 bg-slate-900 border border-slate-850 rounded-lg">
-                      <img src={m.avatarUrl} alt={m.fullName} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-800" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-white truncate leading-none">{m.fullName}</p>
-                        <p className="text-[10px] text-indigo-300 font-semibold mt-1 truncate">{m.role}</p>
-                        <span className="text-[9px] text-slate-500 font-mono">Joined {new Date(m.joinedAt).toLocaleDateString()}</span>
+                  {t.members.map((m, idx) => {
+                    const memberId = m.userId || (m.fullName === "Rohan Sharma" ? "user_rohan" : m.fullName === "Sneha Nair" ? "user_sneha" : m.fullName === "Priya Patel" ? "user_priya" : "student_ashish");
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => onViewProfile && onViewProfile(memberId)}
+                        className="flex items-center gap-3 p-2.5 bg-slate-900 border border-slate-850 rounded-lg cursor-pointer hover:border-indigo-500/30 hover:scale-[1.01] transition-all"
+                      >
+                        <img src={m.avatarUrl} alt={m.fullName} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-800" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate leading-none group-hover:text-indigo-400">{m.fullName}</p>
+                          <p className="text-[10px] text-indigo-300 font-semibold mt-1 truncate">{m.role}</p>
+                          <span className="text-[9px] text-slate-500 font-mono">Joined {new Date(m.joinedAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
