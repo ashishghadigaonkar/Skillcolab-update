@@ -5,6 +5,7 @@ import {
   Briefcase, Calendar, MapPin, Award, GraduationCap, Users, ShieldAlert,
   Flame, ExternalLink, CheckCircle, PlusCircle, ArrowUpRight, Copy, BookOpen
 } from "lucide-react";
+import { UserProfileLink } from "../../../shared/components/UserProfileLink";
 
 export interface FeedComment {
   id: string;
@@ -156,21 +157,19 @@ export const FeedItem: React.FC<FeedItemProps> = ({
       {/* HEADER SECTION */}
       <div className="flex justify-between items-start relative">
         <div className="flex gap-3">
-          <img
-            onClick={() => onViewProfile && onViewProfile(post.userId)}
-            src={post.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80"}
-            alt={post.authorName}
-            className="w-10 h-10 rounded-full border border-slate-850 object-cover shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
-            referrerPolicy="no-referrer"
-          />
+          <UserProfileLink userId={post.userId}>
+            <img
+              src={post.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80"}
+              alt={post.authorName}
+              className="w-10 h-10 rounded-full border border-slate-850 object-cover shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
+              referrerPolicy="no-referrer"
+            />
+          </UserProfileLink>
           <div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span 
-                onClick={() => onViewProfile && onViewProfile(post.userId)}
-                className="font-bold text-white text-xs hover:underline cursor-pointer"
-              >
+              <UserProfileLink userId={post.userId} className="font-bold text-white text-xs hover:underline cursor-pointer">
                 {post.authorName}
-              </span>
+              </UserProfileLink>
               
               <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase flex items-center gap-1 ${currentTypeMeta.bg} ${currentTypeMeta.text} ${currentTypeMeta.border} border`}>
                 <BadgeIcon className="w-2.5 h-2.5 shrink-0" />

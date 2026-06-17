@@ -1,4 +1,4 @@
-// SaaS-grade color palette for SkillCollab
+// SaaS-grade color palette for Krenza
 export const colors = {
   light: {
     background: "#F8FAFC",

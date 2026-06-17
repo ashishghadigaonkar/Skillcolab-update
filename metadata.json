@@ -1,5 +1,5 @@
 {
-  "name": "SkillCollab",
+  "name": "Krenza",
   "description": "A collaborative platform for college students to build project teams, find hackathon partners, book technical mentors, find internships, and receive AI-powered recommendations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

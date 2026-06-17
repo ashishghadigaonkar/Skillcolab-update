@@ -8,6 +8,7 @@ import {
   GitBranch, GitCommit, GitPullRequest, LayoutDashboard, Plus, Check, Play, Trash2, CheckCircle2 
 } from "lucide-react";
 import LoadingSkeleton from "../../../shared/components/LoadingSkeleton";
+import { celebrateMatch } from "../../../shared/components/ConfettiOverlay";
 
 interface ProjectMarketplaceProps {
   onProjectCreated: () => void;
@@ -142,6 +143,7 @@ export default function ProjectMarketplace({ onProjectCreated }: ProjectMarketpl
 
       if (res.ok) {
         setApplicationSuccess(true);
+        celebrateMatch("sides");
         setTimeout(() => {
           setSelectedProjectId(null);
         }, 1500);

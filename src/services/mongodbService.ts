@@ -69,6 +69,12 @@ const UserSchema = new Schema<IUserDocument>(
     isEmailVerified: { type: Boolean, default: false },
     googleId: { type: String, default: "" },
     githubId: { type: String, default: "" },
+    // Phase 1 GitHub OAuth additions
+    githubConnected: { type: Boolean, default: false },
+    githubUsername: { type: String, default: "" },
+    githubAvatar: { type: String, default: "" },
+    githubProfileUrl: { type: String, default: "" },
+    githubConnectedAt: { type: String, default: "" },
     provider: { type: String, default: "email" },
     accountStatus: { type: String, default: "Active" },
     role: { 
@@ -109,7 +115,10 @@ const UserSchema = new Schema<IUserDocument>(
     badges: { type: [String], default: [] },
     connectionsCount: { type: Number, default: 0 },
     followersCount: { type: Number, default: 0 },
-    theme: { type: String, enum: ["light", "dark"], default: "light" }
+    theme: { type: String, enum: ["light", "dark"], default: "light" },
+    settings: {
+      theme: { type: String, enum: ["light", "dark", "system"], default: "light" }
+    }
   },
   {
     timestamps: true
@@ -781,7 +790,7 @@ export class MongoDBService {
     if (this.isConnected) return;
 
     if (!process.env.MONGODB_URI) {
-      console.info("[MongoDBService] No MONGODB_URI provided in environment. SkillCollab automatically falls back to full simulated key-value and local file-based (mock_db_store.json) storage engine.");
+      console.info("[MongoDBService] No MONGODB_URI provided in environment. Krenza automatically falls back to full simulated key-value and local file-based (mock_db_store.json) storage engine.");
       return;
     }
 
@@ -807,7 +816,7 @@ export class MongoDBService {
 
     } catch (error: any) {
       if (error?.message?.includes("ECONNREFUSED") || error?.name === "MongooseServerSelectionError" || error?.message?.includes("MongooseServerSelectionError")) {
-        console.warn("[MongoDBService] Local MongoDB database is not running or is offline. SkillCollab automatically falls back to full simulated key-value and local file-based (mock_db_store.json) storage engine. All student work will persist stably.");
+        console.warn("[MongoDBService] Local MongoDB database is not running or is offline. Krenza automatically falls back to full simulated key-value and local file-based (mock_db_store.json) storage engine. All student work will persist stably.");
       } else {
         console.error("[MongoDBService] Failed to establish connection pool:", error);
       }

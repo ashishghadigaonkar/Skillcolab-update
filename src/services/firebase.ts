@@ -66,7 +66,7 @@ class SimulatedAuthManager {
   constructor() {
     // Initialize accounts with fallback or local storage hydration
     try {
-      const savedAccounts = localStorage.getItem("skillcollab_accounts");
+      const savedAccounts = localStorage.getItem("krenza_accounts");
       if (savedAccounts) {
         this.accounts = JSON.parse(savedAccounts);
       } else {
@@ -99,10 +99,10 @@ class SimulatedAuthManager {
             reputationPoints: 220,
           }
         ];
-        localStorage.setItem("skillcollab_accounts", JSON.stringify(this.accounts));
+        localStorage.setItem("krenza_accounts", JSON.stringify(this.accounts));
       }
 
-      const savedUser = localStorage.getItem("skillcollab_sim_user");
+      const savedUser = localStorage.getItem("krenza_sim_user");
       if (savedUser) {
         this.currentUserObj = JSON.parse(savedUser);
       }
@@ -122,7 +122,7 @@ class SimulatedAuthManager {
   }
 
   private saveAccounts() {
-    localStorage.setItem("skillcollab_accounts", JSON.stringify(this.accounts));
+    localStorage.setItem("krenza_accounts", JSON.stringify(this.accounts));
   }
 
   async registerUser(email: string, password: string, username: string, firstName: string, lastName: string) {
@@ -131,7 +131,7 @@ class SimulatedAuthManager {
     const userLower = username.trim().toLowerCase();
 
     if (this.accounts.some(acc => acc.email.toLowerCase() === emailLower)) {
-      throw new Error("This email is already registered with another account on SkillCollab.");
+      throw new Error("This email is already registered with another account on Krenza.");
     }
     if (this.accounts.some(acc => acc.username.toLowerCase() === userLower)) {
       throw new Error("The username is already taken. Please try another one.");
@@ -209,7 +209,7 @@ class SimulatedAuthManager {
       onboardingCompleted: acc.onboardingCompleted
     };
     this.currentUserObj = userPayload;
-    localStorage.setItem("skillcollab_sim_user", JSON.stringify(userPayload));
+    localStorage.setItem("krenza_sim_user", JSON.stringify(userPayload));
     if (this.listener) this.listener(userPayload);
 
     return userPayload;
@@ -272,7 +272,7 @@ class SimulatedAuthManager {
     };
 
     this.currentUserObj = userPayload;
-    localStorage.setItem("skillcollab_sim_user", JSON.stringify(userPayload));
+    localStorage.setItem("krenza_sim_user", JSON.stringify(userPayload));
     if (this.listener) this.listener(userPayload);
     return userPayload;
   }
@@ -280,7 +280,7 @@ class SimulatedAuthManager {
   async forgotPassword(email: string) {
     const acc = this.accounts.find(a => a.email.toLowerCase() === email.trim().toLowerCase());
     if (!acc) {
-      throw new Error("The entered email is not registered with SkillCollab.");
+      throw new Error("The entered email is not registered with Krenza.");
     }
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     acc.resetCode = resetCode;
@@ -320,7 +320,7 @@ class SimulatedAuthManager {
       onboardingCompleted: true
     };
     this.currentUserObj = mockUser;
-    localStorage.setItem("skillcollab_sim_user", JSON.stringify(mockUser));
+    localStorage.setItem("krenza_sim_user", JSON.stringify(mockUser));
     if (this.listener) this.listener(mockUser);
     return mockUser;
   }
@@ -336,21 +336,21 @@ class SimulatedAuthManager {
       onboardingCompleted: true
     };
     this.currentUserObj = mockUser;
-    localStorage.setItem("skillcollab_sim_user", JSON.stringify(mockUser));
+    localStorage.setItem("krenza_sim_user", JSON.stringify(mockUser));
     if (this.listener) this.listener(mockUser);
     return mockUser;
   }
 
   async signOut() {
     this.currentUserObj = null;
-    localStorage.removeItem("skillcollab_sim_user");
+    localStorage.removeItem("krenza_sim_user");
     if (this.listener) this.listener(null);
   }
 
   updateOnboardingStatus(onboardingCompleted: boolean) {
     if (this.currentUserObj) {
       this.currentUserObj.onboardingCompleted = onboardingCompleted;
-      localStorage.setItem("skillcollab_sim_user", JSON.stringify(this.currentUserObj));
+      localStorage.setItem("krenza_sim_user", JSON.stringify(this.currentUserObj));
       
       const acc = this.accounts.find(a => a.uid === this.currentUserObj.uid);
       if (acc) {

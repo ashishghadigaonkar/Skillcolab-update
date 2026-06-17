@@ -132,7 +132,7 @@ export default function AICareerSuite() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-850 p-4 rounded-2xl">
         <div>
           <div className="flex items-center gap-1.5 text-indigo-400 font-mono text-xs font-semibold mb-1 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/25" /> SkillCollab AI Engine
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/25" /> Krenza AI Engine
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">AI Career & Professional Suite</h2>
           <p className="text-xs text-slate-400">Startup-scale ATS builders, technical diagnostic mocks, and tailored roadmap structures.</p>
@@ -175,7 +175,7 @@ export default function AICareerSuite() {
           <div className="lg:col-span-5 bg-slate-900 border border-slate-850 p-5 rounded-2xl space-y-4">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">1. Profile Data Restructuring</h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              We extract metrics and history directly from your **Student Professional Profile** on SkillCollab and feed them into our Gemini-powered ATS validation gateway.
+              We extract metrics and history directly from your **Student Professional Profile** on Krenza and feed them into our Gemini-powered ATS validation gateway.
             </p>
             
             <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5 text-xs">
@@ -262,7 +262,7 @@ export default function AICareerSuite() {
                     <Award className="w-4 h-4 text-amber-400" /> Redesigned Professional Accomplishments (XYZ Formula)
                   </h4>
                   <div className="space-y-2.5">
-                    {resumeData.accomplishments.map((bullet: string, idx: number) => (
+                    {(resumeData.accomplishments || []).map((bullet: string, idx: number) => (
                       <div key={idx} className="p-3 bg-slate-950 border border-slate-850 rounded-xl text-xs text-slate-300 leading-relaxed font-sans shadow-sm">
                         • {bullet}
                       </div>
@@ -275,7 +275,7 @@ export default function AICareerSuite() {
                   <div className="space-y-2.5">
                     <span className="text-[10px] font-bold text-red-400 font-mono uppercase tracking-widest block">Structural Failings & Fixes</span>
                     <ul className="space-y-1.5 text-[11px] text-slate-400 leading-relaxed">
-                      {resumeData.structuralImprovements.map((s: string, idx: number) => (
+                      {(resumeData.structuralImprovements || []).map((s: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-1.5">
                           <span className="text-red-450 mt-1 font-bold">•</span>
                           <span>{s}</span>
@@ -287,7 +287,7 @@ export default function AICareerSuite() {
                   <div className="space-y-2.5">
                     <span className="text-[10px] font-bold text-indigo-300 font-mono uppercase tracking-widest block">Compliant Recommended Formats</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {resumeData.suggestedTemplates.map((tpl: string, idx: number) => (
+                      {(resumeData.suggestedTemplates || []).map((tpl: string, idx: number) => (
                         <span key={tpl} className="px-2.5 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] text-slate-300 font-semibold flex items-center gap-1">
                           <Bookmark className="w-3 h-3 text-indigo-400" /> {tpl}
                         </span>
@@ -405,7 +405,7 @@ export default function AICareerSuite() {
                       <div>
                         <span className="text-[9px] text-slate-400 font-mono uppercase block mb-1">Evaluator Feedback</span>
                         <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
-                          {evalResult.feedback.map((f: string, idx: number) => (
+                          {(evalResult.feedback || []).map((f: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-1">
                               <span className="text-indigo-400 font-bold">•</span>
                               <span>{f}</span>
@@ -531,7 +531,7 @@ export default function AICareerSuite() {
 
                 {/* Timeline display */}
                 <div className="space-y-4">
-                  {roadmapData.stages.map((stg: any, idx: number) => (
+                  {(roadmapData.stages || []).map((stg: any, idx: number) => (
                     <div key={idx} className="relative group pl-5 border-l-2 border-indigo-650 space-y-2">
                       {/* circle */}
                       <div className="absolute -left-[6px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 group-hover:scale-125 transition-all" />
@@ -550,7 +550,7 @@ export default function AICareerSuite() {
 
                       <div className="p-3 bg-slate-950 border border-slate-850 rounded-xl space-y-2 text-[11px]">
                         <div className="flex flex-wrap gap-1">
-                          {stg.topics.map((t: string) => (
+                          {(stg.topics || []).map((t: string) => (
                             <span key={t} className="px-1.5 py-0.5 bg-slate-900 border border-slate-800/60 rounded text-[9px] font-mono text-slate-350">{t}</span>
                           ))}
                         </div>

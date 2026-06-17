@@ -46,7 +46,10 @@ export const DEFAULT_USER: User = {
   badges: ["React Novice", "Team Player", "Code Wrangler"],
   connectionsCount: 82,
   followersCount: 120,
-  theme: "light"
+  theme: "light",
+  settings: {
+    theme: "light"
+  }
 };
 
 export const DEFAULT_PROJECTS: Project[] = [

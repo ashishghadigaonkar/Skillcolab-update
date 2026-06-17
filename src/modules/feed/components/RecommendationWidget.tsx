@@ -4,6 +4,8 @@ import {
   UserPlus, Check, Star, ArrowRight, Flame, Trophy, ExternalLink,
   Laptop, Cpu, Terminal, Users, Sparkles
 } from "lucide-react";
+import { UserProfileLink } from "../../../shared/components/UserProfileLink";
+import { celebrateMatch } from "../../../shared/components/ConfettiOverlay";
 
 interface RecommendationWidgetProps {
   type: "people" | "projects" | "hackathons";
@@ -19,6 +21,7 @@ export const RecommendationWidget: React.FC<RecommendationWidgetProps> = ({ type
     setTimeout(() => {
       setCompletedActions(prev => ({ ...prev, [itemId]: true }));
       setLoadingActionId(null);
+      celebrateMatch("sides");
       if (onAction) {
         onAction({ itemId, itemType });
       }
@@ -45,9 +48,13 @@ export const RecommendationWidget: React.FC<RecommendationWidgetProps> = ({ type
           {localPeople.map(person => (
             <div key={person.id} className="bg-slate-950 border border-slate-850/60 p-3 rounded-xl flex items-center justify-between gap-2.5">
               <div className="flex gap-2.5 items-center">
-                <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover border border-slate-800" />
+                <UserProfileLink userId={person.id === "rec_p1" ? "senior_shekhar" : "student_ashish"}>
+                  <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover border border-slate-800 cursor-pointer" />
+                </UserProfileLink>
                 <div>
-                  <h5 className="font-bold text-white text-[11px] leading-tight hover:underline cursor-pointer">{person.name}</h5>
+                  <UserProfileLink userId={person.id === "rec_p1" ? "senior_shekhar" : "student_ashish"} className="font-bold text-white text-[11px] leading-tight hover:underline cursor-pointer">
+                    {person.name}
+                  </UserProfileLink>
                   <span className="text-[9px] text-slate-400 block mt-0.5 max-w-[130px] truncate">{person.role}</span>
                   <span className="text-[8px] text-indigo-400 font-mono font-bold block mt-0.5">{person.match}</span>
                 </div>

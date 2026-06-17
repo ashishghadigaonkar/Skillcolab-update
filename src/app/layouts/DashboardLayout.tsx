@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Trophy, FolderPlus, Users, MessageSquare, LayoutGrid, 
-  Sparkles, Award, Layers, Cpu, BookOpen, GraduationCap, 
-  Shield, Compass, Bell, BellOff, X, Menu, ArrowUpRight, User,
-  Sun, Moon
+  Compass, Shield, Bell, X, Menu, ArrowUpRight, User,
+  Sun, Moon, Laptop, Settings, HelpCircle, LogOut, ChevronDown, 
+  BookOpen, Sparkles, Heart, Bookmark, CheckCircle, GraduationCap, Clock,
+  Link2, RefreshCw, GitBranch
 } from "lucide-react";
+import { KrenzaLogo } from "../../shared/components/KrenzaLogo";
 
 interface DashboardLayoutProps {
   currentUser: any;
@@ -19,6 +21,10 @@ interface DashboardLayoutProps {
   navigateToTab: (tabId: string) => void;
   theme?: "light" | "dark";
   onToggleTheme?: () => void;
+  // Account/Theme extension properties:
+  themeMode?: "light" | "dark" | "system";
+  onSetThemeMode?: (mode: "light" | "dark" | "system") => void;
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
@@ -29,617 +35,1001 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   unreadNotificationsCount,
   sidebarOpen,
   setSidebarOpen,
-  notifications,
+  notifications: initialNotifications,
   handleMarkNotificationsRead,
   navigateToTab,
-  theme = "dark",
+  theme = "light",
   onToggleTheme,
+  themeMode = "light",
+  onSetThemeMode,
+  onLogout,
   children
 }) => {
-  // Static state placeholders to feed widgets perfectly:
-  const suggestedTeammates = [
-    { id: "suggest_1", name: "Sneha Nair", role: "UI/UX Designer", matchRate: "96%", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80" },
-    { id: "suggest_2", name: "Rohan Sharma", role: "Backend Architect", matchRate: "92%", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80" },
-    { id: "suggest_3", name: "Juhi Chawla", role: "ML Researcher", matchRate: "88%", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&h=100&q=80" }
-  ];
+  // Overlays and Modals State:
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  
+  // Modal states:
+  const [docModalOpen, setDocModalOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [aboutModalOpen, setAboutModalOpen] = useState(false);
 
-  const trendingHackathons = [
-    { id: "hack_1", title: "AI Studio Hackathon 2026", prize: "$15K Pool", daysLeft: "4 days left" },
-    { id: "hack_2", title: "Superchain India Devfest", prize: "$20K Pool", daysLeft: "12 days left" }
-  ];
+  // GitHub Settings states
+  const [githubSyncData, setGithubSyncData] = useState<any>(null);
+  const [checkingGithub, setCheckingGithub] = useState(false);
+  const [disconnectingGithub, setDisconnectingGithub] = useState(false);
+
+  const fetchGithubStatus = async () => {
+    setCheckingGithub(true);
+    try {
+      const res = await fetch("/api/github/profile");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.connected) {
+          setGithubSyncData(data);
+        } else {
+          setGithubSyncData(null);
+        }
+      }
+    } catch (e) {
+      console.error("[Settings] Error fetching GitHub details:", e);
+    } finally {
+      setCheckingGithub(false);
+    }
+  };
+
+  useEffect(() => {
+    if (aboutModalOpen) {
+      fetchGithubStatus();
+    }
+  }, [aboutModalOpen]);
+
+  // Listen for OAuth Success messages to reload the Github status inside settings
+  useEffect(() => {
+    const handleOauthMessage = (e: MessageEvent) => {
+      if (e.data?.type === "GITHUB_OAUTH_SUCCESS") {
+        fetchGithubStatus();
+      }
+    };
+    window.addEventListener("message", handleOauthMessage);
+    return () => window.removeEventListener("message", handleOauthMessage);
+  }, []);
+
+  const handleDisconnectGithub = async () => {
+    if (!window.confirm("Are you sure you want to disconnect your GitHub profile? This will hide your parsed repositories, scores, and developer discovery rankings.")) {
+      return;
+    }
+    setDisconnectingGithub(true);
+    try {
+      const res = await fetch("/api/github/disconnect", { method: "POST" });
+      if (res.ok) {
+        setGithubSyncData(null);
+        alert("GitHub profile successfully disconnected!");
+      }
+    } catch (e) {
+      console.error("[Settings] Disconnect failed:", e);
+    } finally {
+      setDisconnectingGithub(false);
+    }
+  };
+
+  const handleConnectGithubInSettings = async () => {
+    try {
+      const redirect = `${window.location.origin}/api/github/callback`;
+      const res = await fetch(`/api/github/auth-url?redirectUri=${encodeURIComponent(redirect)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const authWindow = window.open(data.url, "github_oauth_popup", "width=600,height=750");
+        if (!authWindow) {
+          alert("Please enable popups to sync your GitHub profile!");
+        }
+      }
+    } catch (e) {
+      console.error("[Settings] Connect GitHub flow failed:", e);
+    }
+  };
+
+  // Dynamic notifications state to support read and dismiss behavior
+  const [localNotifications, setLocalNotifications] = useState<any[]>(() => {
+    // Inject mock items matching: Mentions, Connection Requests, Team Invites, Mentor Messages, Project Updates, Application Updates
+    return [
+      { id: "notif_1", type: "Mention", title: "Mentioned in Feed", message: "Sneha Nair tagged you in EtherPulse Ledger Analyser roadmap discussion.", read: false, time: "2 mins ago" },
+      { id: "notif_2", type: "ConnectionRequest", title: "Connection Request", message: "Rohan Sharma requested to connect - 92% AI Collaboration Match.", read: false, time: "1 hour ago" },
+      { id: "notif_3", type: "TeamInvite", title: "Team Invitation", message: "GDSC Web Squad invited you to join Hackathon Squad Beta.", read: false, time: "4 hours ago" },
+      { id: "notif_4", type: "MentorMessage", title: "Mentor Message", message: "Mentor Nitin Verma: Let's review your TypeScript project tomorrow.", read: true, time: "1 day ago" },
+      { id: "notif_5", type: "ProjectUpdate", title: "Project Update", message: "AI Study Buddy project status updated: Recruiting Frontend Builders.", read: true, time: "2 days ago" },
+      { id: "notif_6", type: "ApplicationUpdate", title: "Application Update", message: "Your application to Decentralized Collab was APPROVED! 🎉", read: true, time: "3 days ago" }
+    ];
+  });
+
+  const unreadCount = localNotifications.filter(n => !n.read).length;
+
+  const handleMarkAllRead = () => {
+    setLocalNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    handleMarkNotificationsRead();
+  };
+
+  const handleToggleRead = (id: string) => {
+    setLocalNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+  };
+
+  // Helper inside workspace Drawer routing to prevent boilerplates
+  const handleWorkspaceItemClick = (tabId: string, subtabId?: string) => {
+    setSidebarOpen(false);
+    
+    if (tabId === "build" && subtabId) {
+      navigateToTab("build");
+      // Wait for build workspace route update then trigger sub tab via window helper or immediate layout state modifications
+      setTimeout(() => {
+        const buildTabButton = document.querySelector(`button[onClick*="${subtabId}"]`) as HTMLElement;
+        if (buildTabButton) buildTabButton.click();
+      }, 50);
+    } else {
+      navigateToTab(tabId);
+    }
+  };
+
+  const handleSavedItemsClick = () => {
+    setSidebarOpen(false);
+    alert("Saved Items: Saved projects & posts can be viewed in your professional bookmarks portfolio inside the Settings soon!");
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/35 selection:text-white pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/35 selection:text-white pb-20 md:pb-24">
       
-      {/* 1. TOP RESPONSIVE HEADER BAR */}
-      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-lg border-b border-slate-900/80 px-4 py-3 md:px-6 flex justify-between items-center">
-        <div className="flex items-center gap-2.5">
+      {/* 1. PROFESSIONAL SAAS HEADER LAYOUT */}
+      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-lg border-b border-slate-900 px-4 py-3 md:px-6 flex justify-between items-center select-none">
+        
+        {/* Left Side: Hamburger Menu & BRAND */}
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-900 active:scale-95 transition-all cursor-pointer"
+            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-900/60 active:scale-95 transition-all cursor-pointer"
+            id="hamburgeMenuBtn"
           >
-            {sidebarOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5" />}
+            <Menu className="w-5 h-5" />
           </button>
 
           <div
             onClick={() => navigateToTab("home")}
             className="flex items-center gap-2 cursor-pointer select-none"
           >
-            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 border border-indigo-400/25 flex justify-center items-center shadow-md shadow-indigo-600/15">
-              <Trophy className="w-4.5 h-4.5 text-indigo-100" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 leading-none">
-                <h1 className="text-sm font-extrabold tracking-tight text-white uppercase font-mono">SkillCollab</h1>
-                <span className="px-1.5 py-0.5 bg-indigo-500/10 border border-indigo-500/25 rounded text-[7.5px] font-bold text-indigo-400 font-mono tracking-wider">
-                  SaaS Enterprise
-                </span>
-              </div>
-              <p className="text-[9px] text-slate-500 font-medium italic mt-0.5 leading-none hidden xs:block">LinkedIn for Engineering Projects</p>
-            </div>
+            <KrenzaLogo size={28} theme="dark" variant="full-horizontal" />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {currentUser && (
-            <div 
-              onClick={() => navigateToTab("profile")}
-              className="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-900 border border-slate-900 px-2.5 py-1.5 rounded-xl text-xs cursor-pointer select-none transition-colors"
-            >
-              <img 
-                src={currentUser.avatarUrl} 
-                alt={currentUser.fullName} 
-                className="w-6.5 h-6.5 rounded-full object-cover border border-indigo-500/20"
-                referrerPolicy="no-referrer"
-              />
-              <div className="hidden sm:block text-left">
-                <p className="font-extrabold text-white text-[11px] leading-none">{currentUser.fullName.split(" ")[0]}</p>
-                <p className="text-[8px] text-indigo-400 mt-0.5 font-mono leading-none flex items-center gap-0.5">
-                  🏆 {currentUser.reputationPoints || 100} pt
-                </p>
-              </div>
-            </div>
-          )}
-
-          {onToggleTheme && (
-            <button 
-              onClick={onToggleTheme}
-              className="p-1.5 rounded-lg border border-slate-900 hover:bg-slate-900 transition-colors cursor-pointer relative flex items-center justify-center text-slate-400 hover:text-white"
-              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            >
-              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
-            </button>
-          )}
-
+        {/* Right Side: Notifications & Profile Avatar */}
+        <div className="flex items-center gap-4 relative">
+          
+          {/* Notifications Dropdown Trigger */}
           <div className="relative">
             <button 
-              onClick={() => navigateToTab("home")} 
-              className="p-1.5 rounded-lg border border-slate-900 hover:bg-slate-900 transition-colors cursor-pointer relative"
+              onClick={() => {
+                setNotificationsOpen(!notificationsOpen);
+                setAccountMenuOpen(false);
+              }}
+              className={`p-2 rounded-xl border transition-all cursor-pointer relative flex items-center justify-center ${
+                notificationsOpen 
+                  ? "bg-slate-900 border-indigo-500/30 text-white" 
+                  : "border-slate-900 bg-slate-900/35 text-slate-400 hover:text-white"
+              }`}
             >
-              <Bell className="w-4 h-4 text-slate-400" />
-              {unreadNotificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-600 text-[8px] font-bold flex justify-center items-center text-white border border-slate-950">
-                  {unreadNotificationsCount}
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-indigo-600 text-[8.5px] font-bold flex justify-center items-center text-white border border-slate-950">
+                  {unreadCount}
                 </span>
               )}
             </button>
+
+            {/* Notifications Dropdown Panel */}
+            <AnimatePresence>
+              {notificationsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
+                  <motion.div 
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2.5 w-80 md:w-96 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 text-xs overflow-hidden text-left"
+                  >
+                    <div className="p-3.5 border-b border-slate-850 flex justify-between items-center">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                        <span className="font-bold text-white font-sans uppercase text-[10px] tracking-wider">Alerts Notification Inbox</span>
+                      </div>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={handleMarkAllRead}
+                          className="text-[10px] text-indigo-400 font-bold hover:underline cursor-pointer"
+                        >
+                          Mark All Read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-850/60 custom-scrollbar">
+                      {localNotifications.map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          onClick={() => handleToggleRead(notif.id)}
+                          className={`p-3.5 transition-all hover:bg-slate-850/30 cursor-pointer flex gap-3 items-start ${
+                            notif.read ? "opacity-60" : "bg-indigo-950/10"
+                          }`}
+                        >
+                          <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${
+                            notif.read ? "bg-slate-700" : "bg-indigo-500 animate-pulse"
+                          }`} />
+                          
+                          <div className="space-y-1 flex-1">
+                            <div className="flex justify-between items-center leading-none">
+                              <span className="font-bold text-white text-[11px] font-mono tracking-tight">
+                                {notif.type.replace(/([A-Z])/g, ' $1').trim()}
+                              </span>
+                              <span className="text-[9px] text-slate-500 font-mono">{notif.time}</span>
+                            </div>
+                            <p className="text-slate-450 leading-relaxed text-[10.5px]">{notif.message}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {localNotifications.length === 0 && (
+                        <div className="p-8 text-center text-slate-500 text-[11px] font-mono leading-relaxed">
+                          No active indicator alerts.
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Account Profile Dropdown Trigger */}
+          {currentUser && (
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setAccountMenuOpen(!accountMenuOpen);
+                  setNotificationsOpen(false);
+                }}
+                className={`flex items-center gap-1 bg-slate-900/50 hover:bg-slate-900 border border-slate-900 p-1.5 rounded-xl text-xs cursor-pointer select-none transition-all ${
+                  accountMenuOpen ? "border-indigo-500/30" : ""
+                }`}
+              >
+                <img 
+                  src={currentUser.avatarUrl} 
+                  alt={currentUser.fullName} 
+                  className="w-7 h-7 rounded-full object-cover border border-indigo-500/20 shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${accountMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Account Profile Menu Dropdown Overlay */}
+              <AnimatePresence>
+                {accountMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setAccountMenuOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-2.5 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 text-xs overflow-hidden text-left"
+                    >
+                      <div className="p-3.5 bg-slate-950/40 border-b border-slate-850 flex items-center gap-2.5">
+                        <img 
+                          src={currentUser.avatarUrl} 
+                          alt={currentUser.fullName} 
+                          className="w-10 h-10 rounded-full object-cover border border-indigo-500/25 shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="leading-tight">
+                          <h4 className="font-bold text-white font-sans text-xs">{currentUser.fullName}</h4>
+                          <span className="text-[9px] text-indigo-400 tracking-wider font-mono">🏆 {currentUser.reputationPoints || 100} REPUTATION</span>
+                        </div>
+                      </div>
+
+                      <div className="p-1 space-y-0.5">
+                        {/* Section 1: Profiles */}
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            navigateToTab("profile");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <User className="w-4 h-4 text-teal-400" />
+                          <span>View Profile</span>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            navigateToTab("profile");
+                            // Triggers edit modal or panel inside profile section
+                            setTimeout(() => {
+                              const editBtn = document.querySelector('[id*="editProfileBtn"]') as HTMLElement;
+                              if (editBtn) editBtn.click();
+                            }, 100);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <Settings className="w-4 h-4 text-indigo-400" />
+                          <span>Edit Profile</span>
+                        </button>
+
+                        <div className="h-px bg-slate-850/60 my-1 mx-2" />
+
+                        {/* Section 2: Layout & Themes */}
+                        {/* Interactive Appearance expansion panel inside dropdown */}
+                        <div className="px-1 py-1">
+                          <span className="text-[9px] text-slate-500 font-mono font-extrabold px-2.5 block uppercase tracking-wider mb-1">Appearance & preferences</span>
+                          
+                          <div className="grid grid-cols-3 gap-1 px-1">
+                            {[
+                              { id: "light", label: "Light", icon: Sun },
+                              { id: "dark", label: "Dark", icon: Moon },
+                              { id: "system", label: "System", icon: Laptop }
+                            ].map((opt) => {
+                              const Icon = opt.icon;
+                              const isSelected = themeMode === opt.id;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  onClick={() => {
+                                    if (onSetThemeMode) onSetThemeMode(opt.id as any);
+                                  }}
+                                  className={`py-1.5 px-1 rounded-lg flex flex-col items-center gap-1 cursor-pointer transition-all border ${
+                                    isSelected 
+                                      ? "bg-indigo-650/15 border-indigo-500/40 text-indigo-400" 
+                                      : "bg-slate-950/20 border-slate-850 text-slate-400 hover:text-white hover:bg-slate-850"
+                                  }`}
+                                >
+                                  <Icon className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-mono">{opt.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            setNotificationsOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <Bell className="w-4 h-4 text-pink-400" />
+                          <span>Notifications Settings</span>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            alert("Privacy & Security: Session credentials, OAuth scopes, and MongoDB verification handshakes are secured using campus TLS certificates.");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <Shield className="w-4 h-4 text-emerald-400" />
+                          <span>Privacy & Security</span>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            setAboutModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <Settings className="w-4 h-4 text-blue-400" />
+                          <span>Settings</span>
+                        </button>
+
+                        <div className="h-px bg-slate-850/60 my-1 mx-2" />
+
+                        {/* Section 3: Help & Exit */}
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            setSupportModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-850"
+                        >
+                          <HelpCircle className="w-4 h-4 text-amber-400" />
+                          <span>Help & Support Center</span>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            if (onLogout) onLogout();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-rose-500 hover:text-white hover:bg-rose-950/25"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Log Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
         </div>
       </header>
 
-      {/* 2. MAIN HUB INTERFACE WITH RESPONSIVE LAYOUT COLUMNS */}
-      <div className="flex-1 max-w-7xl w-full mx-auto flex">
-        
-        {/* LEFT COLUMN SIDEBAR */}
-        <aside 
-          className={`
-            fixed md:sticky top-0 md:top-15 z-30 h-[calc(100vh-50px)] md:h-[calc(100vh-65px)]
-            bg-slate-950/95 md:bg-transparent border-r md:border-r-0 border-slate-900 md:border-none p-4
-            w-64 shrink-0 transition-all duration-200 ease-in-out md:block
-            ${sidebarOpen ? "left-0" : "-left-64 md:left-0"}
-          `}
-        >
-          <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 h-full flex flex-col justify-between overflow-y-auto custom-scrollbar">
-            <div className="space-y-5">
-              <div className="text-slate-500 text-[10px] font-mono font-extrabold uppercase tracking-widest px-1.5 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Navigation Hub
-              </div>
-              
-              <nav className="space-y-4 text-xs">
-                {/* HOME */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Home</span>
-                  <button
-                    onClick={() => navigateToTab("home")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "home" || activeTab === "dashboard"
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+      {/* 2. SLIDING LEFT DRAWER (Workspace Drawer) - BOTH MOBILE AND DESKTOP */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            {/* Backdrop Blur overlay */}
+            <div 
+              className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm transition-all" 
+              onClick={() => setSidebarOpen(false)}
+            />
+            
+            {/* Sliding Drawer Body Container */}
+            <motion.aside 
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 210 }}
+              className="fixed top-0 bottom-0 left-0 z-40 bg-slate-900 border-r border-slate-800 w-72 p-5 flex flex-col justify-between h-full select-none"
+            >
+              <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-100px)] custom-scrollbar pr-1 text-left">
+                
+                {/* Drawer Branding & Header Close */}
+                <div className="flex justify-between items-center pb-2 border-b border-slate-850">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-indigo-500" />
+                    <span className="font-extrabold text-sm tracking-widest text-white uppercase font-mono">Workspace</span>
+                  </div>
+                  <button 
+                    onClick={() => setSidebarOpen(false)}
+                    className="p-1 px-1.5 rounded-lg bg-slate-950 border border-slate-850 text-slate-400 hover:text-white"
                   >
-                    <LayoutGrid className="w-4 h-4" /> Home Feed
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* COMMUNITY */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Community</span>
+                {/* Drawer Sections: ONLY Secondary Platform Features */}
+                
+                {/* SECTION 1: WORKSPACE */}
+                <div className="space-y-1.5">
+                  <span className="text-[9px] text-slate-500 font-mono font-extrabold uppercase tracking-widest block px-1">Workspace</span>
                   
                   <button
-                    onClick={() => navigateToTab("professional_suite")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "professional_suite"
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("build", "projects")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <Award className="w-4 h-4 text-pink-400" /> Peer Network
+                    <div className="flex items-center gap-2.5">
+                      <FolderPlus className="w-4 h-4 text-emerald-400" />
+                      <span>My Projects</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("open_source")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "open_source"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-855"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("build", "teams")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <Cpu className="w-4 h-4 text-emerald-300" /> Open Source Hub
+                    <div className="flex items-center gap-2.5">
+                      <Users className="w-4 h-4 text-sky-400" />
+                      <span>My Teams</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("hackathons")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "hackathons"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("build", "open_source")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <Trophy className="w-4 h-4 text-amber-400" /> Hackathons Hub
-                  </button>
-                </div>
-
-                {/* BUILD */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Build</span>
-
-                  <button
-                    onClick={() => navigateToTab("projects")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "projects"
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
-                  >
-                    <FolderPlus className="w-4 h-4 text-emerald-400" /> Projects Board
+                    <div className="flex items-center gap-2.5">
+                      <BookOpen className="w-4 h-4 text-amber-400" />
+                      <span>Open Source Contributions</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("teams")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "teams"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("hackathons")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <Users className="w-4 h-4 text-indigo-400" /> Team Builder
+                    <div className="flex items-center gap-2.5">
+                      <Sparkles className="w-4 h-4 text-pink-400" />
+                      <span>Hackathons</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("startup_launchpad")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "startup_launchpad"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("mentors")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <Layers className="w-4 h-4 text-violet-400" /> Startup Launchpad
-                  </button>
-                </div>
-
-                {/* CAREER */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Career</span>
-
-                  <button
-                    onClick={() => navigateToTab("ai_career_suite")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "ai_career_suite"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-300" /> AI Career Suite
+                    <div className="flex items-center gap-2.5">
+                      <GraduationCap className="w-4 h-4 text-teal-400" />
+                      <span>Mentorship</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("internships")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "internships"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={() => handleWorkspaceItemClick("build", "applications")}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <BookOpen className="w-4 h-4 text-cyan-400" /> Internships Board
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle className="w-4 h-4 text-indigo-400" />
+                      <span>Applications</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
 
                   <button
-                    onClick={() => navigateToTab("mentors")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "mentors"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
+                    onClick={handleSavedItemsClick}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
                   >
-                    <GraduationCap className="w-4 h-4 text-orange-400" /> Mentors Network
-                  </button>
-
-                  <button
-                    onClick={() => navigateToTab("ai_matcher")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "ai_matcher"
-                        ? "bg-indigo-650 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
-                  >
-                    <Cpu className="w-4 h-4 text-fuchsia-400" /> AI Matcher
-                  </button>
-                </div>
-
-                {/* MESSAGES */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Messages</span>
-                  <button
-                    onClick={() => navigateToTab("chats")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "chats"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4 text-indigo-400" /> Collaboration Chats
-                  </button>
-                </div>
-
-                {/* PROFILE */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono font-extrabold uppercase tracking-wider block px-1.5">Profile</span>
-                  <button
-                    onClick={() => navigateToTab("profile")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer ${
-                      activeTab === "profile"
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-850"
-                    }`}
-                  >
-                    <User className="w-4 h-4 text-teal-400" /> My Professional Profile
+                    <div className="flex items-center gap-2.5">
+                      <Bookmark className="w-4 h-4 text-rose-400" />
+                      <span>Saved Items</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                   </button>
                 </div>
 
                 <div className="h-px bg-slate-850/60 my-2" />
 
-                {/* UTILITY */}
-                <button
-                  onClick={() => navigateToTab("admin")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer text-xs ${
-                    activeTab === "admin"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-500 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Shield className="w-4 h-4" /> Admin Console
-                </button>
+                {/* SECTION 2: RESOURCES */}
+                <div className="space-y-1">
+                  <span className="text-[9px] text-slate-500 font-mono font-extrabold uppercase tracking-widest block px-1">Resources</span>
+                  
+                  <button
+                    onClick={() => { setSidebarOpen(false); setDocModalOpen(true); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4 text-slate-500" />
+                    <span>Documentation</span>
+                  </button>
 
-                <button
-                  onClick={() => navigateToTab("blueprint")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-left transition-all cursor-pointer text-xs ${
-                    activeTab === "blueprint"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-slate-500 hover:text-white hover:bg-slate-850"
-                  }`}
-                >
-                  <Compass className="w-4 h-4 text-sky-400" /> Figma PRD
-                </button>
-              </nav>
-            </div>
+                  <button
+                    onClick={() => { setSidebarOpen(false); setSupportModalOpen(true); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
+                  >
+                    <HelpCircle className="w-4 h-4 text-slate-500" />
+                    <span>Support Center</span>
+                  </button>
 
-            <div className="pt-4 border-t border-slate-850/60 text-slate-500 font-mono text-[9px] text-center leading-normal">
-              SkillCollab v1.4 • Mobile First Design
-            </div>
-          </div>
-        </aside>
+                  <button
+                    onClick={() => { setSidebarOpen(false); setFeedbackModalOpen(true); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-850 text-left transition-colors cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4 text-slate-500" />
+                    <span>Feedback</span>
+                  </button>
+                </div>
 
-        {/* MIDDLE COLUMN WORKSPACE */}
-        <main className="flex-1 w-full min-w-0 p-3 md:p-5 transition-all overflow-hidden">
+                {/* SECTION 3: ADMINISTRATION */}
+                {currentUser && (currentUser.isAdmin || currentUser.role === "Administrator" || currentUser.email?.includes("admin")) && (
+                  <>
+                    <div className="h-px bg-slate-850/60 my-2" />
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-slate-500 font-mono font-extrabold uppercase tracking-widest block px-1">Administration</span>
+                      <button
+                        onClick={() => { setSidebarOpen(false); navigateToTab("admin"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:bg-slate-850 text-left transition-colors cursor-pointer"
+                      >
+                        <Shield className="w-4 h-4 text-indigo-500" />
+                        <span>Admin Console</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+              </div>
+
+              {/* EMPTY FOOTER - DEV / VERSION INFO HAS BEEN SECURELY REMOVED TO PREVENT TECH LARPING AT PAGE MARGINS */}
+              <div className="pt-4 border-t border-slate-850 text-[10px] text-slate-500 font-medium text-center italic">
+                Secure Enterprise Node
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 3. MIDDLE COLUMN WORKSPACE */}
+      <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+        <main className="min-w-0 transition-all overflow-hidden">
           {children}
         </main>
-
-        {/* RIGHT COLUMN SIDEBAR */}
-        <aside className="hidden xl:block w-76 p-4 shrink-0 h-[calc(100vh-65px)] sticky top-15 overflow-y-auto custom-scrollbar">
-          <div className="space-y-5">
-            
-            {/* Suggested Partners widget */}
-            <div className="bg-slate-900 border border-slate-850 p-4.5 rounded-2xl space-y-3.5 text-left">
-              <div className="flex justify-between items-center border-b border-slate-850/60 pb-2">
-                <span className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> Suggested Partners
-                </span>
-                <span className="text-[8.5px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono px-1 py-0.5 rounded">
-                  AI Fit
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                {suggestedTeammates.map(collab => (
-                  <div key={collab.id} className="flex justify-between items-center">
-                    <div className="flex gap-2">
-                      <img 
-                        src={collab.avatar} 
-                        alt={collab.name} 
-                        className="w-7.5 h-7.5 rounded-full border border-slate-800 object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div>
-                        <span className="font-bold text-white text-[11px] block leading-none">{collab.name}</span>
-                        <span className="text-[9px] text-slate-400 mt-1 block leading-none">{collab.role}</span>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => navigateToTab("chats")}
-                      className="px-2 py-1 bg-slate-950 hover:bg-slate-855 border border-slate-850 rounded text-[9px] text-slate-300 font-mono font-bold active:scale-95 transition-all cursor-pointer"
-                    >
-                      Chat ({collab.matchRate})
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Trending Hackathons widget */}
-            <div className="bg-slate-900 border border-slate-850 p-4.5 rounded-2xl space-y-3 text-left">
-              <div className="flex justify-between items-center border-b border-slate-850/60 pb-2">
-                <span className="text-[10px] text-amber-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> Campus Hackathons
-                </span>
-                <span className="text-[8.5px] text-amber-400 font-mono">Live</span>
-              </div>
-
-              <div className="space-y-3.5 text-xs">
-                {trendingHackathons.map(hack => (
-                  <div key={hack.id} className="space-y-1 hover:bg-slate-850/30 p-1 rounded-lg transition-colors cursor-pointer" onClick={() => navigateToTab("hackathons")}>
-                    <div className="flex justify-between items-center leading-none">
-                      <span className="font-bold text-white text-[11px] truncate w-4/5">{hack.title}</span>
-                      <span className="text-[9px] font-mono text-emerald-400 font-bold">{hack.prize}</span>
-                    </div>
-                    <p className="text-[9.5px] text-slate-500 font-mono">{hack.daysLeft}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Inbox Indicator Logs Widget */}
-            <div className="bg-slate-900 border border-slate-850 p-4.5 rounded-2xl space-y-3 text-left">
-              <div className="flex justify-between items-center border-b border-slate-850/60 pb-2">
-                <span className="text-[10px] text-pink-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Bell className="w-3.5 h-3.5" /> Recent Alerts Inbox
-                </span>
-                {notifications.some(n => !n.read) && (
-                  <button 
-                    onClick={handleMarkNotificationsRead}
-                    className="text-[8.5px] text-indigo-400 font-semibold font-mono underline hover:text-indigo-300 cursor-pointer"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 text-[11px] leading-relaxed">
-                {notifications.slice(0, 3).map(notif => (
-                  <div 
-                    key={notif.id} 
-                    className={`p-2 rounded-xl border text-[10px] transition-colors ${
-                      notif.read 
-                        ? "bg-slate-950/40 border-slate-950 text-slate-500" 
-                        : "bg-indigo-950/20 border-indigo-900/40 text-slate-200"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <strong className="text-white font-bold leading-tight truncate w-11/12">{notif.title}</strong>
-                      {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
-                    </div>
-                    <p className="text-slate-400 text-[10px] mt-0.5 leading-normal">{notif.message}</p>
-                  </div>
-                ))}
-
-                {notifications.length === 0 && (
-                  <p className="text-center text-slate-500 text-[10px] py-2">No active indicator alerts.</p>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </aside>
-
       </div>
 
-      {/* 3. LOCKED BOTTOM BAR FOR MOBILE PORTAL */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--surface)] backdrop-blur-md border-t border-[var(--border)] grid grid-cols-5 h-16 pb-2.5 pt-2 px-1 select-none shadow-[0_-8px_30px_rgba(0,0,0,0.1)] transition-all">
-        {(() => {
-          const isHomeActive = activeTab === "home" || activeTab === "dashboard";
-          return (
-            <button
-              onClick={() => navigateToTab("home")}
-              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
-                isHomeActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
-              }`}
-            >
-              {isHomeActive && (
-                <motion.div
-                  layoutId="bottomNavActivePill"
-                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-              <motion.div
-                className="flex items-center justify-center"
-                animate={{ scale: isHomeActive ? 1.1 : 1, y: isHomeActive ? -1 : 0 }}
-                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+      {/* 4. EXQUISITE PRIMARY BOTTOM NAVIGATION SYSTEM - BOTH MOBILE AND DESKTOP */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.25)] select-none">
+        <div className="max-w-xl mx-auto grid grid-cols-5 h-16 px-2">
+          {(() => {
+            const isHomeActive = activeTab === "home" || activeTab === "dashboard";
+            return (
+              <button
+                onClick={() => navigateToTab("home")}
+                className={`w-full h-full flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                  isHomeActive 
+                    ? "bg-indigo-500/10 text-indigo-400 font-bold" 
+                    : "text-slate-450 hover:text-white"
+                }`}
               >
-                <LayoutGrid className="w-5 h-5" />
-              </motion.div>
-              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Home</span>
-              {isHomeActive && (
-                <motion.span
-                  layoutId="bottomNavDot"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-            </button>
-          );
-        })()}
+                <LayoutGrid className="w-4.5 h-4.5" />
+                <span className="text-[10px] tracking-tight leading-none">Home</span>
+              </button>
+            );
+          })()}
 
-        {(() => {
-          const isProjectsActive = activeTab === "projects";
-          return (
-            <button
-              onClick={() => navigateToTab("projects")}
-              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
-                isProjectsActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
-              }`}
-            >
-              {isProjectsActive && (
-                <motion.div
-                  layoutId="bottomNavActivePill"
-                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-              <motion.div
-                className="flex items-center justify-center"
-                animate={{ scale: isProjectsActive ? 1.1 : 1, y: isProjectsActive ? -1 : 0 }}
-                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+          {(() => {
+            const isBuildActive = activeTab === "build" || activeTab === "projects" || activeTab === "teams" || activeTab === "open_source" || activeTab === "applications";
+            return (
+              <button
+                onClick={() => navigateToTab("build")}
+                className={`w-full h-full flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                  isBuildActive 
+                    ? "bg-indigo-500/10 text-indigo-400 font-bold" 
+                    : "text-slate-450 hover:text-white"
+                }`}
               >
-                <FolderPlus className="w-5 h-5" />
-              </motion.div>
-              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Build</span>
-              {isProjectsActive && (
-                <motion.span
-                  layoutId="bottomNavDot"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-            </button>
-          );
-        })()}
+                <FolderPlus className="w-4.5 h-4.5" />
+                <span className="text-[10px] tracking-tight leading-none">Build</span>
+              </button>
+            );
+          })()}
 
-        {(() => {
-          const isExploreActive = activeTab === "explore";
-          return (
-            <button
-              onClick={() => navigateToTab("explore")}
-              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
-                isExploreActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
-              }`}
-            >
-              {isExploreActive && (
-                <motion.div
-                  layoutId="bottomNavActivePill"
-                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-              <motion.div
-                className="flex items-center justify-center"
-                animate={{ scale: isExploreActive ? 1.1 : 1, y: isExploreActive ? -1 : 0 }}
-                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+          {(() => {
+            const isExploreActive = activeTab === "explore" || activeTab === "hackathons" || activeTab === "internships" || activeTab === "mentors";
+            return (
+              <button
+                onClick={() => navigateToTab("explore")}
+                className={`w-full h-full flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                  isExploreActive 
+                    ? "bg-indigo-500/10 text-indigo-400 font-bold" 
+                    : "text-slate-450 hover:text-white"
+                }`}
               >
-                <Compass className="w-5 h-5" />
-              </motion.div>
-              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Explore</span>
-              {isExploreActive && (
-                <motion.span
-                  layoutId="bottomNavDot"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-            </button>
-          );
-        })()}
+                <Compass className="w-4.5 h-4.5" />
+                <span className="text-[10px] tracking-tight leading-none">Explore</span>
+              </button>
+            );
+          })()}
 
-        {(() => {
-          const isChatsActive = activeTab === "chats";
-          return (
-            <button
-              onClick={() => navigateToTab("chats")}
-              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
-                isChatsActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
-              }`}
-            >
-              {isChatsActive && (
-                <motion.div
-                  layoutId="bottomNavActivePill"
-                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-              <motion.div
-                className="flex items-center justify-center"
-                animate={{ scale: isChatsActive ? 1.1 : 1, y: isChatsActive ? -1 : 0 }}
-                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+          {(() => {
+            const isChatsActive = activeTab === "chats";
+            return (
+              <button
+                onClick={() => navigateToTab("chats")}
+                className={`w-full h-full flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                  isChatsActive 
+                    ? "bg-indigo-500/10 text-indigo-400 font-bold" 
+                    : "text-slate-450 hover:text-white"
+                }`}
               >
-                <MessageSquare className="w-5 h-5" />
-              </motion.div>
-              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Chats</span>
-              {isChatsActive && (
-                <motion.span
-                  layoutId="bottomNavDot"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-            </button>
-          );
-        })()}
+                <MessageSquare className="w-4.5 h-4.5" />
+                <span className="text-[10px] tracking-tight leading-none">Chats</span>
+              </button>
+            );
+          })()}
 
-        {(() => {
-          const isProfileActive = activeTab === "profile";
-          return (
-            <button
-              onClick={() => navigateToTab("profile")}
-              className={`w-full h-full flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 duration-150 transition-all ${
-                isProfileActive ? "text-[var(--accent)] font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium"
-              }`}
-            >
-              {isProfileActive && (
-                <motion.div
-                  layoutId="bottomNavActivePill"
-                  className="absolute inset-y-[2px] inset-x-[4px] bg-[var(--accent)]/5 rounded-xl -z-10 border border-[var(--accent)]/10"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-              <motion.div
-                className="flex items-center justify-center"
-                animate={{ scale: isProfileActive ? 1.1 : 1, y: isProfileActive ? -1 : 0 }}
-                transition={{ type: "spring", stiffness: 440, damping: 20 }}
+          {(() => {
+            const isProfileActive = activeTab === "profile";
+            return (
+              <button
+                onClick={() => navigateToTab("profile")}
+                className={`w-full h-full flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                  isProfileActive 
+                    ? "bg-indigo-500/10 text-indigo-400 font-bold" 
+                    : "text-slate-450 hover:text-white"
+                }`}
               >
-                <User className="w-5 h-5" />
-              </motion.div>
-              <span className="text-[9.5px] tracking-tight leading-none font-sans text-center">Profile</span>
-              {isProfileActive && (
-                <motion.span
-                  layoutId="bottomNavDot"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] absolute bottom-0.5"
-                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                />
-              )}
-            </button>
-          );
-        })()}
+                <User className="w-4.5 h-4.5" />
+                <span className="text-[10px] tracking-tight leading-none">Profile</span>
+              </button>
+            );
+          })()}
+        </div>
       </nav>
+
+      {/* =========================================================================
+                     SECONDARY SYSTEM UTILITY MODALS (Resources & Settings)
+          ========================================================================= */}
+
+      {/* 1. DOCUMENTATION RESOURCE MODAL */}
+      <AnimatePresence>
+        {docModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden text-left"
+            >
+              <div className="p-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/40">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4.5 h-4.5 text-indigo-400" />
+                  <strong className="text-white text-xs uppercase font-mono tracking-wider">Krenza System Documentation</strong>
+                </div>
+                <button onClick={() => setDocModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4 text-xs text-slate-350 leading-relaxed max-h-[380px] overflow-y-auto custom-scrollbar">
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-white text-[11px] font-mono">1. SYSTEM INTENT & SCOPE</h4>
+                  <p>Krenza is an enterprise collegiate platform built to bridge the gap between student engineers, developers, and designers. It serves as a centralized hub to build robust client applications and assemble interdisciplinary hackathon teams.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-white text-[11px] font-mono">2. CORE COLLABORATION PIPELINES</h4>
+                  <p>Build Workspace aggregates project marketplace submissions, team builder directories, and open-source contributions. Use our direct chat systems with custom encryption triggers to reach out to suggested peer matches.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-white text-[11px] font-mono">3. REPUTATION ENGINE</h4>
+                  <p>Reputation points (PT) are verified by campus mentors and open-source contributions. High reputation metrics unlock advanced filter tools on the Hackathon Boards.</p>
+                </div>
+              </div>
+              <div className="p-3.5 bg-slate-950/60 flex justify-end">
+                <button 
+                  onClick={() => setDocModalOpen(false)}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer"
+                >
+                  I Understand
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 2. SUPPORT CENTER MODAL */}
+      <AnimatePresence>
+        {supportModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden text-left py-1"
+            >
+              <div className="p-4 border-b border-slate-850 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-4.5 h-4.5 text-amber-400" />
+                  <strong className="text-white text-xs uppercase font-mono tracking-wider">Krenza Support Center</strong>
+                </div>
+                <button onClick={() => setSupportModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-3.5 text-xs text-slate-350">
+                <p>Have issues with peer verification profiles, system certificates, or hackathon matching pipelines? Open a ticket directly with campus administrators.</p>
+                <div className="space-y-1.5">
+                  <label className="block text-[9px] text-slate-400 uppercase font-mono font-bold">Issue Category</label>
+                  <select className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 outline-none text-white">
+                    <option>Profile & Reputation Points Verification</option>
+                    <option>Team Recruitment & Workspace Chat Bugs</option>
+                    <option>University Email Linkages & SSO Auth</option>
+                    <option>Other inquiries</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[9px] text-slate-400 uppercase font-mono font-bold">Inquiry Message</label>
+                  <textarea rows={3} placeholder="Provide precise bug context or questions..." className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 outline-none text-white resize-none" />
+                </div>
+              </div>
+              <div className="p-4 bg-slate-950/60 flex justify-end gap-2 text-xs">
+                <button onClick={() => setSupportModalOpen(false)} className="px-3.5 py-1.5 text-slate-400 hover:text-white font-semibold">Cancel</button>
+                <button 
+                  onClick={() => { setSupportModalOpen(false); alert("Ticket Submitted: Campus support squads will verify this enquiry soon!"); }}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg cursor-pointer"
+                >
+                  Submit Support Ticket
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. FEEDBACK RESOURCE MODAL */}
+      <AnimatePresence>
+        {feedbackModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full overflow-hidden text-left"
+            >
+              <div className="p-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/40">
+                <div className="flex items-center gap-2">
+                  <Heart className="w-4.5 h-4.5 text-rose-500" />
+                  <strong className="text-white text-xs uppercase font-mono tracking-wider">Share your platform experience</strong>
+                </div>
+                <button onClick={() => setFeedbackModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4 text-xs text-slate-350">
+                <p>Help us perfect Krenza! Share rating feedback on your matching experience.</p>
+                <div className="flex justify-around items-center py-2 bg-slate-950/20 rounded-xl border border-slate-850/50">
+                  {["😞", "😐", "🙂", "🚀", "🔥"].map((emoji, idx) => (
+                    <button 
+                      key={idx} 
+                      onClick={() => { setFeedbackModalOpen(false); alert("Thank you so much! We have recorded your positive rating feedback."); }}
+                      className="text-2xl hover:scale-125 transition-transform cursor-pointer"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-950/40 text-center text-[10px] text-slate-500 font-mono italic">
+                Feedback directly fuels our matching models.
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 4. SETTINGS -> ACCOUNT INTEGRATIONS & ABOUT MODAL */}
+      <AnimatePresence>
+        {aboutModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden text-left"
+            >
+              <div className="p-4 border-b border-slate-850 flex justify-between items-center bg-slate-950/40">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4.5 h-4.5 text-indigo-400" />
+                  <strong className="text-white text-xs uppercase font-mono tracking-wider">Account Settings & Integrations</strong>
+                </div>
+                <button onClick={() => setAboutModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-5 text-xs text-slate-300">
+                
+                {/* GITHUB WORKSPACE INTEGRATION SECTION */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] text-slate-450 uppercase font-mono font-bold tracking-wider">Third-Party Connections</h4>
+                  
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-850 space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-850/60">
+                      <div className="flex items-center gap-2">
+                        <GitBranch className="w-4 h-4 text-indigo-400" />
+                        <span className="font-sans font-bold text-white text-xs">GitHub Workspace Connection</span>
+                      </div>
+                      
+                      {checkingGithub ? (
+                        <span className="px-2 py-0.5 bg-slate-900 border border-slate-850 text-slate-500 text-[9px] font-mono rounded flex items-center gap-1.5">
+                          <RefreshCw className="w-2.5 h-2.5 animate-spin text-slate-500" /> Wait...
+                        </span>
+                      ) : githubSyncData ? (
+                        <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 text-[9px] font-mono font-bold rounded">
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-slate-900 border border-slate-850 text-slate-450 text-[9px] font-mono rounded">
+                          Not Linked
+                        </span>
+                      )}
+                    </div>
+
+                    {checkingGithub ? (
+                      <div className="flex justify-center py-4">
+                        <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
+                      </div>
+                    ) : githubSyncData ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 bg-slate-900/50 p-2.5 rounded-lg border border-slate-850/50">
+                          <img 
+                            src={githubSyncData.profile.avatarUrl} 
+                            alt="github user avatar" 
+                            className="w-10 h-10 rounded-lg border border-slate-850 object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="leading-snug">
+                            <strong className="text-white font-sans text-xs block">{githubSyncData.profile.name || githubSyncData.profile.username}</strong>
+                            <span className="text-[10px] text-slate-400 font-mono">@{githubSyncData.profile.username}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-mono">
+                          <div className="bg-slate-900 py-1.5 px-2 rounded-lg border border-slate-850/50 text-slate-350">
+                            <strong>{githubSyncData.profile.publicRepos}</strong>
+                            <span className="block text-[8px] text-slate-500 uppercase mt-0.5">Repos</span>
+                          </div>
+                          <div className="bg-slate-900 py-1.5 px-2 rounded-lg border border-slate-850/50 text-slate-350">
+                            <strong>{githubSyncData.profile.openSourceScore}</strong>
+                            <span className="block text-[8px] text-slate-500 uppercase mt-0.5">Rep Rank</span>
+                          </div>
+                          <div className="bg-slate-900 py-1.5 px-2 rounded-lg border border-slate-850/50 text-slate-350">
+                            <strong>{githubSyncData.profile.contributionCount}</strong>
+                            <span className="block text-[8px] text-slate-500 uppercase mt-0.5">Commits</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-1 font-mono">
+                          <button
+                            onClick={() => {
+                              setAboutModalOpen(false);
+                              navigateToTab("open_source");
+                            }}
+                            className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[10px] text-indigo-400 font-bold rounded-lg cursor-pointer transition-all"
+                          >
+                            Manage Portfolio
+                          </button>
+                          
+                          <button
+                            disabled={disconnectingGithub}
+                            onClick={handleDisconnectGithub}
+                            className="flex-1 py-1.5 bg-rose-950/20 hover:bg-rose-950/40 border border-rose-900/30 text-[10px] text-rose-400 font-bold rounded-lg cursor-pointer transition-all"
+                          >
+                            {disconnectingGithub ? "Clearing..." : "Disconnect Link"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-[10.5px] text-slate-400 leading-normal">
+                          Synchronize your external public GitHub profile to generate AI tech reports, display repositories inside campus squads, and receive invitations.
+                        </p>
+                        <button
+                          onClick={handleConnectGithubInSettings}
+                          className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-bold tracking-wide font-sans transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-indigo-600/15"
+                        >
+                          <Link2 className="w-3.5 h-3.5" /> Integrate Secure GitHub Profile
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* APP BUILD METRIC AND ENVIRONMENT */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] text-slate-450 uppercase font-mono font-bold tracking-wider">Platform Details</h4>
+                  
+                  <div className="space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-850">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[9px] text-slate-500 uppercase font-bold">App Version</span>
+                      <strong className="text-white font-mono text-xs">Krenza v1.4</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[9px] text-slate-500 uppercase font-bold">Build Number</span>
+                      <strong className="text-slate-300 font-mono text-xs">SC-2026-0616</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[9px] text-slate-500 uppercase font-bold">Environment</span>
+                      <strong className="text-indigo-400 font-mono text-xs">production (Cloud Run)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] leading-relaxed text-slate-500 text-center select-none pt-1">
+                  All rights reserved • Handshakes secured using on-campus TLS certificate authorizations.
+                </p>
+              </div>
+              <div className="p-3.5 bg-slate-950/60 flex justify-end">
+                <button 
+                  onClick={() => setAboutModalOpen(false)}
+                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-bold rounded-lg cursor-pointer font-mono"
+                >
+                  Close Settings
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

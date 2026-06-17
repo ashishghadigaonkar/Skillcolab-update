@@ -47,7 +47,7 @@ export default function HomeFeed({ navigateToTab, currentUser, onViewProfile }: 
       }
 
       const backendFollows = await FollowService.getFollowing();
-      setFollowingIds(backendFollows.map((f: any) => f.followingId));
+      setFollowingIds((backendFollows || []).map((f: any) => f.followingId));
     } catch (e) {
       console.error("[Feed] Error querying backend social graphs:", e);
     } finally {
@@ -518,22 +518,42 @@ export default function HomeFeed({ navigateToTab, currentUser, onViewProfile }: 
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredPosts.map((post) => {
+          {filteredPosts.map((post, index) => {
             return (
-              <FeedItem
-                key={post.id}
-                post={post}
-                currentUserId={currentUser?.id || "student_ashish"}
-                followingIds={followingIds}
-                onLike={handleLike}
-                onComment={handleComment}
-                onSave={handleSave}
-                onShare={handleShare}
-                onFollow={handleFollow}
-                onConnect={handleConnect}
-                onReport={handleReport}
-                onViewProfile={onViewProfile}
-              />
+              <React.Fragment key={post.id}>
+                <FeedItem
+                  post={post}
+                  currentUserId={currentUser?.id || "student_ashish"}
+                  followingIds={followingIds}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  onSave={handleSave}
+                  onShare={handleShare}
+                  onFollow={handleFollow}
+                  onConnect={handleConnect}
+                  onReport={handleReport}
+                  onViewProfile={onViewProfile}
+                />
+                
+                {/* Natural recommendation injections */}
+                {index === 1 && (
+                  <div className="animate-in fade-in slide-in-from-bottom duration-300">
+                    <RecommendationWidget type="projects" />
+                  </div>
+                )}
+                
+                {index === 3 && (
+                  <div className="animate-in fade-in slide-in-from-bottom duration-300">
+                    <RecommendationWidget type="people" />
+                  </div>
+                )}
+                
+                {index === 5 && (
+                  <div className="animate-in fade-in slide-in-from-bottom duration-300">
+                    <RecommendationWidget type="hackathons" />
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
 

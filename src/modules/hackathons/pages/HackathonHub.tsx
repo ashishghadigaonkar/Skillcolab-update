@@ -107,7 +107,7 @@ export default function HackathonHub({ onSubmissionSuccess }: HackathonHubProps)
 
   // Flatten submissions across active hacks for leaderboard
   const allSubmissions = hackathons
-    .flatMap(h => h.submissions.map(s => ({ ...s, hackathonTitle: h.title })))
+    .flatMap(h => (h.submissions || []).map(s => ({ ...s, hackathonTitle: h.title })))
     .sort((a, b) => (b.score || 0) - (a.score || 0));
 
   return (
@@ -117,7 +117,7 @@ export default function HackathonHub({ onSubmissionSuccess }: HackathonHubProps)
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-6">
         <div>
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Trophy className="text-indigo-400 w-5 h-5" /> SkillCollab Hackathon Hub
+            <Trophy className="text-indigo-400 w-5 h-5" /> Krenza Hackathon Hub
           </h3>
           <p className="text-slate-400 text-xs mt-1">Participate in university level hack challenges, win prizes, and build credentials.</p>
         </div>

@@ -127,7 +127,7 @@ export default function StartupLaunchpad() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-850 p-4 rounded-2xl">
         <div>
           <div className="flex items-center gap-1.5 text-indigo-400 font-mono text-xs font-semibold mb-1 uppercase tracking-wider">
-            <Rocket className="w-3.5 h-3.5 text-indigo-400" /> SkillCollab Startup Launchpad
+            <Rocket className="w-3.5 h-3.5 text-indigo-400" /> Krenza Startup Launchpad
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">Co-Founder Matching & AI Project Suite</h2>
           <p className="text-xs text-slate-400">Match with prospective university ventures, post startup cards, or dynamically author product MVPs.</p>

@@ -23,6 +23,7 @@ import projectsRouter from "./src/modules/projects/projects.routes";
 import hackathonsRouter from "./src/modules/hackathons/hackathons.routes";
 import opportunitiesRouter from "./src/modules/opportunities/opportunities.routes";
 import mentorsRouter from "./src/modules/mentors/mentors.routes";
+import githubRouter from "./src/modules/github/github.routes";
 
 const app = express();
 const PORT = 3000;
@@ -49,6 +50,7 @@ app.use("/", hackathonsRouter);
 app.use("/", opportunitiesRouter);
 app.use("/", mentorsRouter);
 app.use("/", aiRouter);
+app.use("/", githubRouter);
 
 async function startServer() {
   // Vite Development / Production Configuration Gating
@@ -68,14 +70,14 @@ async function startServer() {
 
   // Listening Loop
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[SkillCollab Build] Server running continuously at http://0.0.0.0:${PORT}`);
+    console.log(`[Krenza Build] Server running continuously at http://0.0.0.0:${PORT}`);
     
     // Connect to MongoDB Atlas Connection Pool
     MongoDBService.getInstance().connect()
       .then(() => console.info("[Bootstrap] MongoDB Atlas Connection pool established successfully."))
       .catch((err) => {
         if (err?.message?.includes("ECONNREFUSED") || err?.name === "MongooseServerSelectionError" || err?.message?.includes("MongooseServerSelectionError")) {
-          console.info("[Bootstrap] Offline fallback activated: Local MongoDB is offline/unresolved. SkillCollab operates stably using full file-based dbState mock fallbacks.");
+          console.info("[Bootstrap] Offline fallback activated: Local MongoDB is offline/unresolved. Krenza operates stably using full file-based dbState mock fallbacks.");
         } else {
           console.warn("[Bootstrap] MongoDB Atlas Connection deferred or initialized under offline fallback:", err?.message || err);
         }

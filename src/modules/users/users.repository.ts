@@ -43,7 +43,8 @@ export class UserRepository {
             badges: userDoc.badges,
                       connectionsCount: userDoc.connectionsCount,
             followersCount: userDoc.followersCount,
-            theme: (userDoc as any).theme || "light"
+            theme: (userDoc as any).theme || "light",
+            settings: (userDoc as any).settings || { theme: (userDoc as any).theme || "light" }
           };
         }
       } catch (err) {
@@ -127,7 +128,7 @@ export class UserRepository {
       skills: ["React", "CSS", "Tailwind", "Node.js", "Express"],
       education: [{ institution: "State Technical College", degree: "Undergrad Builder", fieldOfStudy: "Computer Studies", startYear: 2024, endYear: 2028 }],
       experience: [],
-      certifications: ["SkillCollab Certified Student Developer"],
+      certifications: ["Krenza Certified Student Developer"],
       achievements: ["Active Builder Milestone"],
       reputationPoints: 120,
       connectionsCount: 42,
@@ -137,7 +138,7 @@ export class UserRepository {
 
   async updateProfile(updateData: any) {
     const { 
-      fullName, headline, bio, skills, education, experience, links, theme,
+      fullName, headline, bio, skills, education, experience, links, theme, settings,
       college, branch, graduationYear, interests, careerGoals, onboardingCompleted
     } = updateData;
     if (fullName !== undefined) dbState.user.fullName = fullName;
@@ -148,6 +149,7 @@ export class UserRepository {
     if (experience !== undefined) dbState.user.experience = experience;
     if (links !== undefined) dbState.user.links = { ...dbState.user.links, ...links };
     if (theme !== undefined) dbState.user.theme = theme;
+    if (settings !== undefined) dbState.user.settings = { ...dbState.user.settings, ...settings };
     if (college !== undefined) dbState.user.college = college;
     if (branch !== undefined) dbState.user.branch = branch;
     if (graduationYear !== undefined) dbState.user.graduationYear = graduationYear;
@@ -171,6 +173,7 @@ export class UserRepository {
               experience: dbState.user.experience,
               links: dbState.user.links,
               theme: dbState.user.theme,
+              settings: dbState.user.settings,
               college: dbState.user.college,
               branch: dbState.user.branch,
               graduationYear: dbState.user.graduationYear,
@@ -222,6 +225,7 @@ export class UserRepository {
             connectionsCount: userDoc.connectionsCount,
             followersCount: userDoc.followersCount,
             theme: (userDoc as any).theme || "light",
+            settings: (userDoc as any).settings || { theme: (userDoc as any).theme || "light" },
             username: userDoc.username || ""
           };
         }

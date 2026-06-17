@@ -9,6 +9,7 @@ import {
   User, Star, Calendar, MessageSquare, Plus, Clock, ExternalLink, ShieldAlert, CreditCard,
   ChevronLeft, ChevronRight, Check, AlertCircle, Info, MapPin, Sparkles, BookOpen
 } from "lucide-react";
+import { celebrateMatch } from "../../../shared/components/ConfettiOverlay";
 
 interface MentorNetworkProps {
   onViewProfile?: (userId: string) => void;
@@ -98,6 +99,7 @@ export default function MentorNetwork({ onViewProfile }: MentorNetworkProps = {}
 
       if (res.ok) {
         setCalBookingSuccess(true);
+        celebrateMatch("sides");
         setTimeout(() => {
           setCalSelectedMentorId(null);
           setCalSelectedSlot(null);
@@ -129,6 +131,7 @@ export default function MentorNetwork({ onViewProfile }: MentorNetworkProps = {}
 
       if (res.ok) {
         setBookingSuccess(true);
+        celebrateMatch("sides");
         setTimeout(() => {
           setSelectedMentor(null);
           setBookingTopic("");

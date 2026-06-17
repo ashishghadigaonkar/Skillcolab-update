@@ -252,7 +252,7 @@ export class StructuredLogger {
   static log(level: "info" | "warn" | "error", message: string, context?: any) {
     const payload = {
       timestamp: new Date().toISOString(),
-      service: "SkillCollab-Core",
+      service: "Krenza-Core",
       level: level.toUpperCase(),
       message,
       ...(context && { metadata: context })

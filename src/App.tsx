@@ -7,6 +7,9 @@ import { Project } from "./types";
 import { FirebaseAuthService } from "./services/firebase";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { useTheme } from "./theme/useTheme";
+import { ConfettiOverlay } from "./shared/components/ConfettiOverlay";
+import { LandingPage } from "./components/LandingPage";
+import { KrenzaLogo } from "./shared/components/KrenzaLogo";
 
 export default function App() {
   return (
@@ -19,7 +22,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const { theme, toggleTheme, setTheme } = useTheme();
+  const { theme, themeMode, toggleTheme, setTheme, setThemeMode } = useTheme();
   const [activeTab, setActiveTab] = useState<string>("home");
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -30,6 +33,7 @@ function AppContent() {
   const [authChecking, setAuthChecking] = useState(true);
   const [syncingUser, setSyncingUser] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   // Expanded local auth properties
   const [authStep, setAuthStep] = useState<"login" | "signup" | "verify" | "forgot" | "reset">("login");
@@ -59,35 +63,43 @@ function AppContent() {
   const [onboardAvatar, setOnboardAvatar] = useState("");
   const [onboardSubmitting, setOnboardSubmitting] = useState(false);
 
-  // Sync user object theme to the active provider theme whenever user finishes loading
+  // Sync user object theme preferences on login or initial load
   useEffect(() => {
-    if (currentUser?.theme && currentUser.theme !== theme) {
-      setTheme(currentUser.theme);
+    const userTheme = currentUser?.settings?.theme || currentUser?.theme;
+    if (userTheme && userTheme !== themeMode) {
+      setThemeMode(userTheme);
     }
   }, [currentUser?.id]);
 
-  const handleToggleTheme = async () => {
-    const newTheme = theme === "light" ? "dark" : "light";
+  const handleSetThemeMode = async (newMode: "light" | "dark" | "system") => {
+    setThemeMode(newMode);
     
-    // Toggle theme in provider (which updates localStorage and document class)
-    toggleTheme();
-
     if (currentUser) {
-      // Optimistic update to prevent delays
-      setCurrentUser((prev: any) => prev ? { ...prev, theme: newTheme } : null);
+      const computedTheme = newMode === "system"
+        ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+        : newMode;
+
+      setCurrentUser((prev: any) => prev ? {
+        ...prev,
+        theme: computedTheme,
+        settings: { ...prev.settings, theme: newMode }
+      } : null);
 
       try {
         const res = await fetch("/api/users/profile", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ theme: newTheme })
+          body: JSON.stringify({ 
+            theme: computedTheme,
+            settings: { theme: newMode }
+          })
         });
         if (res.ok) {
           const result = await res.json();
           setCurrentUser(result.user);
         }
       } catch (err) {
-        console.error("Failed to sync theme to backend profile settings:", err);
+        console.error("Failed to sync theme settings to backend database:", err);
       }
     }
   };
@@ -210,9 +222,57 @@ function AppContent() {
       setSelectedProfileId(null);
     }
     setActiveTab(tabId);
+    
+    // Sync browser URL
+    let path = "/home";
+    if (tabId === "home" || tabId === "dashboard") path = "/home";
+    else if (tabId === "projects" || tabId === "teams" || tabId === "open_source" || tabId === "build" || tabId === "applications") path = "/build";
+    else if (tabId === "explore" || tabId === "hackathons" || tabId === "internships" || tabId === "mentors") path = "/explore";
+    else if (tabId === "chats") path = "/chats";
+    else if (tabId === "profile") path = "/profile";
+
+    window.history.pushState(null, "", path);
+    setCurrentPath(path);
+    
     setSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const syncRouteWithState = () => {
+      const path = window.location.pathname;
+      setCurrentPath(path);
+
+      if (currentUser) {
+        if (path === "/" || path === "/login" || path === "/signup") {
+          if (path === "/login" || path === "/signup") {
+            window.history.replaceState(null, "", "/home");
+            setCurrentPath("/home");
+            setActiveTab("home");
+          }
+        } else {
+          if (path === "/home") setActiveTab("home");
+          else if (path === "/build") setActiveTab("projects");
+          else if (path === "/explore") setActiveTab("explore");
+          else if (path === "/chats") setActiveTab("chats");
+          else if (path === "/profile") setActiveTab("profile");
+        }
+      } else {
+        if (path !== "/" && path !== "/login" && path !== "/signup") {
+          window.history.replaceState(null, "", "/");
+          setCurrentPath("/");
+        } else if (path === "/login") {
+          setAuthStep("login");
+        } else if (path === "/signup") {
+          setAuthStep("signup");
+        }
+      }
+    };
+
+    window.addEventListener("popstate", syncRouteWithState);
+    syncRouteWithState();
+    return () => window.removeEventListener("popstate", syncRouteWithState);
+  }, [currentUser]);
 
   if (authChecking) {
     return (
@@ -227,8 +287,9 @@ function AppContent() {
   }
 
   if (!currentUser) {
-    // Standard validation actions
-    const handleLogin = async (e: React.FormEvent) => {
+    if (currentPath === "/login" || currentPath === "/signup") {
+      // Standard validation actions
+      const handleLogin = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError("");
       setAuthSuccess("");
@@ -282,7 +343,7 @@ function AppContent() {
         return;
       }
       if (!authTermsAccepted) {
-        setAuthError("You must read and accept the SkillCollab academic terms & guidelines.");
+        setAuthError("You must read and accept the Krenza academic terms & guidelines.");
         return;
       }
 
@@ -388,11 +449,11 @@ function AppContent() {
         <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 p-6 xs:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6 backdrop-blur-md">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 border border-indigo-400/25 flex justify-center items-center shadow-lg shadow-indigo-600/15">
-              <Trophy className="w-6 h-6 text-indigo-500" />
+            <div className="mx-auto flex justify-center items-center py-2">
+              <KrenzaLogo theme="dark" variant="icon-only" size={48} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">SkillCollab Gateway</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">Krenza Gateway</h2>
               <p className="text-[11px] text-slate-400">Campus Project Collaborations & Smart Verifications</p>
             </div>
           </div>
@@ -479,7 +540,7 @@ function AppContent() {
               </button>
 
               <div className="text-center pt-1 text-xs text-slate-400">
-                Don't have an account on SkillCollab?{" "}
+                Don't have an account on Krenza?{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -598,7 +659,7 @@ function AppContent() {
               </button>
 
               <div className="text-center pt-1 text-xs text-slate-400">
-                Already registered with SkillCollab?{" "}
+                Already registered with Krenza?{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -820,6 +881,43 @@ function AppContent() {
         </div>
       </div>
     );
+    }
+
+    return (
+      <LandingPage
+        currentUser={currentUser}
+        onNavigateAuth={(step) => {
+          window.history.pushState(null, "", `/${step}`);
+          setCurrentPath(`/${step}`);
+          setAuthStep(step);
+          setAuthError("");
+          setAuthSuccess("");
+        }}
+        onEnterWorkspace={() => {
+          window.history.pushState(null, "", "/login");
+          setCurrentPath("/login");
+          setAuthStep("login");
+        }}
+      />
+    );
+  }
+
+  // Intercept logged in user on the landing page
+  if (currentUser && currentPath === "/") {
+    return (
+      <LandingPage
+        currentUser={currentUser}
+        onNavigateAuth={(step) => {
+          window.history.pushState(null, "", `/${step}`);
+          setCurrentPath(`/${step}`);
+        }}
+        onEnterWorkspace={() => {
+          window.history.pushState(null, "", "/home");
+          setCurrentPath("/home");
+          setActiveTab("home");
+        }}
+      />
+    );
   }
 
   // Intercept profile onboarding completion state
@@ -1019,7 +1117,7 @@ function AppContent() {
                 setCurrentUser(null);
                 setAuthStep("login");
               }}
-              className="w-full text-slate-500 hover:text-white transition-colors text-xs text-center font-medium block"
+              className="w-full text-rose-600 hover:text-rose-700 font-bold transition-all text-xs text-center block hover:underline cursor-pointer mt-3"
             >
               Disconnect Session & Log Out
             </button>
@@ -1030,29 +1128,38 @@ function AppContent() {
   }
 
   return (
-    <DashboardLayout
-      currentUser={currentUser}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      unreadNotificationsCount={unreadNotificationsCount}
-      sidebarOpen={sidebarOpen}
-      setSidebarOpen={setSidebarOpen}
-      notifications={notifications}
-      handleMarkNotificationsRead={handleMarkNotificationsRead}
-      navigateToTab={navigateToTab}
-      theme={theme}
-      onToggleTheme={handleToggleTheme}
-    >
-      <AppRouter
-        activeTab={activeTab}
-        navigateToTab={navigateToTab}
+    <>
+      <DashboardLayout
         currentUser={currentUser}
-        onUpdateCurrentUser={setCurrentUser}
-        projects={projects}
-        handleProjectSuccess={handleProjectSuccess}
-        selectedProfileId={selectedProfileId}
-        viewUserProfile={viewUserProfile}
-      />
-    </DashboardLayout>
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        unreadNotificationsCount={unreadNotificationsCount}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        notifications={notifications}
+        handleMarkNotificationsRead={handleMarkNotificationsRead}
+        navigateToTab={navigateToTab}
+        theme={theme}
+        themeMode={themeMode}
+        onSetThemeMode={handleSetThemeMode}
+        onLogout={async () => {
+          await FirebaseAuthService.logout();
+          setCurrentUser(null);
+          setAuthStep("login");
+        }}
+      >
+        <AppRouter
+          activeTab={activeTab}
+          navigateToTab={navigateToTab}
+          currentUser={currentUser}
+          onUpdateCurrentUser={setCurrentUser}
+          projects={projects}
+          handleProjectSuccess={handleProjectSuccess}
+          selectedProfileId={selectedProfileId}
+          viewUserProfile={viewUserProfile}
+        />
+      </DashboardLayout>
+      <ConfettiOverlay />
+    </>
   );
 }

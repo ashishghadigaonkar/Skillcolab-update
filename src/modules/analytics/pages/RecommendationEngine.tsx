@@ -73,7 +73,7 @@ export default function RecommendationEngine() {
             <Cpu className="w-4 h-4 animate-pulse" /> ENGINE: LAZY-EVALUATION GEMINI ACTIVE
           </div>
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            🚀 SkillCollab AI Recommendation Center
+            🚀 Krenza AI Recommendation Center
           </h3>
           <p className="text-slate-400 text-xs mt-1">
             Recompute project rosters, mentor schedules, and jobs with advanced semantic cross-analysis.

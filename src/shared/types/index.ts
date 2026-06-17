@@ -52,6 +52,9 @@ export interface User {
   connectionsCount: number;
   followersCount: number;
   theme?: "light" | "dark";
+  settings?: {
+    theme?: "light" | "dark" | "system";
+  };
   username?: string;
   password?: string;
   firstName?: string;
@@ -67,6 +70,12 @@ export interface User {
   accountStatus?: string;
   googleId?: string;
   githubId?: string;
+  // Phase 1 GitHub OAuth additions
+  githubConnected?: boolean;
+  githubUsername?: string;
+  githubAvatar?: string;
+  githubProfileUrl?: string;
+  githubConnectedAt?: string;
 }
 
 export interface Project {

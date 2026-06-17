@@ -73,17 +73,20 @@ export const AppRouter: React.FC<AppRouterProps> = ({
 
       {activeTab === "teams" && (
         <TeamBuilder 
-          projects={projects}
-          fetchProjects={handleProjectSuccess}
+          projects={projects} 
+          fetchProjects={handleProjectSuccess} 
+          onViewProfile={viewUserProfile} 
           onRosterUpdated={handleProjectSuccess}
-          onViewProfile={viewUserProfile}
         />
+      )}
+
+      {activeTab === "open_source" && (
+        <OpenSourceHub />
       )}
 
       {activeTab === "chats" && <WorkspaceChat currentUser={currentUser} />}
       {activeTab === "ai_career_suite" && <AICareerSuite />}
       {activeTab === "startup_launchpad" && <StartupLaunchpad />}
-      {activeTab === "open_source" && <OpenSourceHub />}
       {activeTab === "hackathons" && (
         <HackathonHub onSubmissionSuccess={handleProjectSuccess} />
       )}
